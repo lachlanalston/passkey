@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>Passkey Lab — WebAuthn testing bench</title>
+  <meta name="description" content="Local, server-less bench for creating, saving and testing WebAuthn passkeys." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="fonts.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="frame">
+    <header class="masthead">
+      <div class="mark">Passkey<span>Lab</span></div>
+      <p class="role">WebAuthn testing bench · runs locally · no server, nothing leaves the browser</p>
+    </header>
+
+    <!-- Signature: the relying-party readout. A passkey binds to this domain. -->
+    <section class="readout" aria-labelledby="readout-title">
+      <div class="readout-lead">
+        <span class="eyebrow">Relying party — passkeys created here bind to</span>
+        <p class="rp" id="rpid">&hellip;</p>
+        <h1 id="readout-title" class="sr-only">Passkey testing bench</h1>
+        <p class="readout-note">
+          A passkey is cryptographically tied to this domain. One made here will never work on another origin —
+          that binding is why passkeys cannot be phished.
+        </p>
+      </div>
+      <dl class="gauges">
+        <div class="gauge"><dt>Origin</dt><dd id="origin">&hellip;</dd></div>
+        <div class="gauge"><dt>Secure context</dt><dd id="secure">&hellip;</dd></div>
+        <div class="gauge"><dt>WebAuthn</dt><dd id="webauthn">&hellip;</dd></div>
+        <div class="gauge"><dt>Platform auth</dt><dd id="platform">&hellip;</dd></div>
+        <div class="gauge"><dt>Conditional UI</dt><dd id="condui">&hellip;</dd></div>
+      </dl>
+    </section>
+
+    <div class="bench">
+      <!-- left column: controls -->
+      <div class="col">
+        <section class="step">
+          <p class="eyebrow"><span class="idx">01</span> Registration</p>
+          <h2>Create a passkey</h2>
+          <div class="grid">
+            <label>Username
+              <input id="username" type="text" value="demo.user@example.com" />
+            </label>
+            <label>Display name
+              <input id="displayname" type="text" value="Demo User" />
+            </label>
+            <label>Authenticator
+              <select id="attachment">
+                <option value="">Any — browser or wallet chooses</option>
+                <option value="platform">This device (Face / Touch / Hello)</option>
+                <option value="cross-platform">Cross-platform (LastPass, key, phone)</option>
+              </select>
+            </label>
+            <label>Discoverable (resident key)
+              <select id="residentkey">
+                <option value="required" selected>Required — true passkey</option>
+                <option value="preferred">Preferred</option>
+                <option value="discouraged">Discouraged — server-side</option>
+              </select>
+            </label>
+            <label>User verification
+              <select id="userverification">
+                <option value="preferred" selected>Preferred</option>
+                <option value="required">Required — PIN / biometric</option>
+                <option value="discouraged">Discouraged</option>
+              </select>
+            </label>
+            <label>Attestation
+              <select id="attestation">
+                <option value="none" selected>None</option>
+                <option value="indirect">Indirect</option>
+                <option value="direct">Direct</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions-row">
+            <button id="btn-create" class="btn btn-primary">Create passkey</button>
+          </div>
+          <p class="hint">To store into LastPass, unlock the LastPass extension first — it intercepts the prompt and saves the passkey to the vault.</p>
+        </section>
+
+        <section class="step">
+          <p class="eyebrow"><span class="idx">02</span> Authentication</p>
+          <h2>Test sign-in</h2>
+          <div class="grid grid-1">
+            <label>Match
+              <select id="allowmode">
+                <option value="stored" selected>Passkeys created here (stored IDs)</option>
+                <option value="any">Any discoverable passkey for this site</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions-row">
+            <button id="btn-auth" class="btn btn-primary">Sign in with passkey</button>
+            <button id="btn-autofill" class="btn">Autofill (Conditional UI)</button>
+            <button id="btn-inspect" class="btn">Inspect last sign-in (raw)</button>
+          </div>
+          <input id="autofill-input" class="autofill" type="text" placeholder="Click here — passkeys surface in autofill" autocomplete="username webauthn" />
+        </section>
+
+        <section class="step">
+          <p class="eyebrow"><span class="idx">03</span> Prove it</p>
+          <h2>Show why it's secure</h2>
+          <div class="prove-group">
+            <span class="prove-glabel">The three pillars</span>
+            <div class="actions-row">
+              <button id="btn-phish" class="btn">Can't phish</button>
+              <button id="btn-tamper" class="btn">Can't tamper</button>
+              <button id="btn-replay" class="btn">Can't replay</button>
+            </div>
+          </div>
+          <div class="prove-group">
+            <span class="prove-glabel">Extra checks</span>
+            <div class="actions-row">
+              <button id="btn-wrongkey" class="btn">Wrong-key</button>
+              <button id="btn-uv" class="btn">Verification</button>
+            </div>
+          </div>
+          <p class="hint"><strong>Phishing</strong> (wrong domain blocked), <strong>Tamper</strong> (altered signature fails), <strong>Replay</strong> (reused login rejected) — the three pillars. Plus <strong>Wrong-key</strong> (only the matching key verifies) and <strong>Verification</strong> (presence vs PIN/biometric). Create a passkey first, then run them.</p>
+          <div id="prove-out" class="prove-out" hidden></div>
+        </section>
+      </div>
+
+      <!-- right column: live state -->
+      <div class="col">
+        <section class="step">
+          <p class="eyebrow">Ledger</p>
+          <h2>Stored on this browser</h2>
+          <div class="table-wrap">
+            <table id="cred-table">
+              <thead><tr><th>Created</th><th>Username</th><th>Wallet</th><th>Portability</th><th>Sign-ins</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="actions-row">
+            <button id="btn-export" class="btn">Export JSON</button>
+            <label for="import-file" class="btn btn-file">Import JSON<input id="import-file" type="file" accept="application/json" hidden /></label>
+            <button id="btn-clear" class="btn btn-quiet">Clear list</button>
+          </div>
+          <p class="hint">Held in <code>localStorage</code> for testing — credential IDs and metadata only, never private keys. Those stay in the authenticator.</p>
+        </section>
+
+        <section class="step step-trace">
+          <div class="log-head">
+            <p class="eyebrow">Trace</p>
+            <button id="btn-clearlog" class="btn btn-quiet">Clear</button>
+          </div>
+          <p id="explain" class="explain" aria-live="polite" hidden></p>
+          <pre id="log" aria-live="polite"></pre>
+        </section>
+      </div>
+    </div>
+
+    <footer class="colophon">
+      <p>Static demo. No backend. Signatures are verified in-browser for teaching; a production relying party verifies server-side against the registered public key.</p>
+    </footer>
+  </div>
+
+  <div id="inspector" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="insp-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="insp-title">Raw inspector</h2>
+        <button id="insp-close" class="btn btn-quiet">Close</button>
+      </div>
+      <div id="insp-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

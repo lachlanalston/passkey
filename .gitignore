@@ -1,0 +1,12 @@
+# Claude Code local project data — not part of the app, do not publish
+.claude/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+.vscode/
+.idea/
+
+# Node (only used for local tooling; never part of the deploy)
+node_modules/
