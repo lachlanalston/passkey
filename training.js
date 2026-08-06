@@ -5,8 +5,8 @@
 
 import { esc, randomBytes, syncLabel } from "./core.js";
 import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
-import { translateError, cleanupListHtml } from "./ui.js";
-import { xrayHtml } from "./xray.js";
+import { translateError, cleanupListHtml, openRecordCard } from "./ui.js";
+import { xrayHtml, wireXray } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
 
 const $ = (id) => document.getElementById(id);
@@ -302,6 +302,7 @@ function wireOut() {
     b.addEventListener("click", () => goTo(+b.dataset.gotoInline)));
   el.querySelectorAll("button[data-skip-inline]").forEach((b) =>
     b.addEventListener("click", skipPhone));
+  wireXray(el, (id) => openRecordCard(loadCreds().find((c) => c.id === id)));
 }
 
 // tone: ok | warn | bad
@@ -573,5 +574,5 @@ const xraySeen = { registration: false, authentication: false };
 function xraySlot(kind, res) {
   const open = !xraySeen[kind];
   xraySeen[kind] = true;
-  return xrayHtml(kind, res, { open });
+  return xrayHtml(kind, res, { open, recordLink: true });
 }

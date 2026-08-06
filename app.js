@@ -16,8 +16,11 @@ import {
 
 import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
 import { renderTraining } from "./training.js";
-import { section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab } from "./ui.js";
-import { xrayHtml } from "./xray.js";
+import {
+  section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
+  openRecordCard,
+} from "./ui.js";
+import { xrayHtml, wireXray } from "./xray.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -380,9 +383,9 @@ function renderTable() {
   }));
   tbody.querySelectorAll("button[data-key]").forEach((b) => b.addEventListener("click", () => {
     const c = loadCreds()[+b.dataset.key];
-    if (!c.publicKey) { log("No stored public key for this record."); return; }
-    log(`Public key for ${c.username} (${algName(c.publicKeyAlgorithm)})\n` + spkiToPem(c.publicKey));
-    explain("Shown below is the public half of the key pair — the only part a real server stores. The matching private key stays locked in the authenticator and is never exportable.", "ok");
+    openRecordCard(c);
+    if (c.publicKey) log(`Public key for ${c.username} (${algName(c.publicKeyAlgorithm)})\n` + spkiToPem(c.publicKey));
+    explain("Shown is the public half of the key pair — the only part a real server stores. The matching private key stays locked in the authenticator and is never exportable.", "ok");
   }));
 }
 
@@ -488,8 +491,9 @@ function openXray() {
     return;
   }
   const { kind, res } = lastCeremony;
-  openModal(kind === "registration" ? "Ceremony X-ray — registration" : "Ceremony X-ray — sign-in",
-    xrayHtml(kind, res, { open: true }));
+  const body = openModal(kind === "registration" ? "Ceremony X-ray — registration" : "Ceremony X-ray — sign-in",
+    xrayHtml(kind, res, { open: true, recordLink: true }));
+  wireXray(body, (id) => openRecordCard(loadCreds().find((c) => c.id === id)));
 }
 
 // ---------- mode switching ----------

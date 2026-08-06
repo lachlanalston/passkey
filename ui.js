@@ -3,6 +3,7 @@
 
 import {
   esc, toHex, inspectAuthData, flagBits, coseInfo, walletName, aaguidStr,
+  spkiToPem, algName,
 } from "./core.js";
 
 // ---------- shared markup builders ----------
@@ -69,6 +70,32 @@ export function trapModalTab(e) {
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
+
+// ---------- the record card ----------
+// What a relying party actually holds after registration. The point of the card is how
+// little that is — there is no password row because there is no password.
+export function recordCardHtml(rec) {
+  if (!rec) return `<p class="insp-note">That record is no longer in the ledger.</p>`;
+  const backed = rec.backupEligible == null
+    ? "unknown (this record predates the flag)"
+    : rec.backupEligible ? (rec.backupState ? "yes — synced to a cloud account" : "eligible, but not yet") : "no — device-bound";
+
+  return `<div class="prove-out record-card">
+    <h3>The server's entire database about you</h3>
+    ${rows([
+      ["Credential ID", `<span class="mono record-id">${esc(rec.id)}</span>`],
+      ["Public key", rec.publicKey
+        ? `<pre class="hex record-pem">${esc(spkiToPem(rec.publicKey))}</pre><span class="insp-note">${esc(algName(rec.publicKeyAlgorithm))}</span>`
+        : "not captured for this record"],
+      ["Sign-in counter", `<span class="mono">${Number(rec.signIns || 0)}</span>`],
+      ["Created", esc(new Date(rec.created).toLocaleString())],
+      ["Backed up", esc(backed), rec.backupState ? "ok" : ""],
+    ])}
+    <p class="cause record-caption">No password. No password hash. No secret. Steal this and you can verify signatures — you can't make one.</p>
+  </div>`;
+}
+
+export const openRecordCard = (rec) => openModal("Everything the site knows about you", recordCardHtml(rec));
 
 // ---------- error translation ----------
 // WebAuthn's DOMException names mean nothing to an L1 tech. The rail always shows the

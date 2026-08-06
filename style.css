@@ -452,6 +452,13 @@ td.actions { white-space: nowrap; text-align: right; }
   .xray-node.wire-in::before  { right: calc(100% + 3rem - 5px); border-right-color: var(--accent); }
 }
 
+/* ---------- record card ---------- */
+.record-card { border-left-color: var(--accent); margin-top: 0; }
+.record-card h3 { margin-bottom: .8rem; }
+.record-id { word-break: break-all; font-size: .78rem; }
+.record-pem { margin: 0; font-size: .68rem; white-space: pre-wrap; word-break: break-all; }
+.record-caption { margin-top: .2rem; font-weight: 500; }
+
 /* ---------- explainer ---------- */
 .explain {
   margin: 0 0 .85rem; padding: .8rem .95rem; font-size: .92rem; line-height: 1.5;

@@ -126,10 +126,39 @@ test("raw inspector: last sign-in re-verifies, and breaks when edited", async ({
   await expect(page.locator("#inspector")).toBeHidden();
 });
 
-test("public key action prints a PEM to the trace", async ({ page }) => {
+test("public key action opens the record card", async ({ page }) => {
   await createOne(page);
   await page.click("#cred-table button[data-key]");
+  await expect(page.locator("#insp-title")).toHaveText("Everything the site knows about you");
+  await expect(page.locator(".record-card h3")).toHaveText("The server's entire database about you");
+  await expect(page.locator(".record-card")).toContainText("-----BEGIN PUBLIC KEY-----");
+  await expect(page.locator(".record-card")).toContainText("ES256");
+  await expect(page.locator(".record-caption")).toHaveText(
+    "No password. No password hash. No secret. Steal this and you can verify signatures — you can't make one.");
   await expect(page.locator("#log")).toContainText("-----BEGIN PUBLIC KEY-----");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#inspector")).toBeHidden();
+});
+
+test("the record card lists ID, counter, created date and backup state", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-auth");
+  await expect(page.locator("#log")).toContainText("sign-in verified");
+  await page.click("#cred-table button[data-key]");
+  const card = page.locator(".record-card");
+  await expect(card).toContainText("Credential ID");
+  await expect(card).toContainText("Sign-in counter");
+  await expect(card.locator(".prow", { hasText: "Sign-in counter" })).toContainText("1");
+  await expect(card).toContainText("Created");
+  await expect(card.locator(".prow", { hasText: "Backed up" })).toContainText("no — device-bound");
+});
+
+test("the X-ray links through to the record card", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-xray");
+  await page.click("#insp-body button[data-xray-record]");
+  await expect(page.locator("#insp-title")).toHaveText("Everything the site knows about you");
+  await expect(page.locator(".record-card")).toContainText("The server's entire database about you");
 });
 
 test("export then import round-trips the ledger", async ({ page }) => {
