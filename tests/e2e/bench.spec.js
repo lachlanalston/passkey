@@ -177,7 +177,7 @@ test("no console errors and no network calls beyond the static files", async ({ 
   const requests = [];
   page.on("request", (r) => requests.push(r.url()));
 
-  await gotoFresh(page);
+  await page.reload();
   await createOne(page);
   await page.click("#btn-auth");
   await expect(page.locator("#log")).toContainText("sign-in verified");

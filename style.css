@@ -61,6 +61,23 @@ body {
 .mark span { color: var(--accent); }
 .role { margin: 0; font-family: var(--mono); font-size: .72rem; color: var(--ink-2); }
 
+.mode-toggle { margin-left: auto; }
+
+/* ---------- landing: pick a way in ---------- */
+.landing {
+  margin: 1.25rem 0;
+  padding: clamp(1.4rem, 4vw, 2.6rem) clamp(1.3rem, 4vw, 2.6rem);
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+}
+.landing-title {
+  margin: 0 0 .55rem;
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(1.9rem, 4.4vw, 2.9rem); letter-spacing: -0.02em; line-height: 1.05;
+}
+.landing-lede { margin: 0 0 1.5rem; max-width: 62ch; font-size: 1.02rem; color: var(--ink-2); }
+.landing-actions .btn { font-size: .82rem; padding: .7rem 1.2rem; }
+
 /* ---------- signature readout ---------- */
 .readout {
   display: grid;

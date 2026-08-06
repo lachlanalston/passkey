@@ -16,8 +16,20 @@
     <header class="masthead">
       <div class="mark">Passkey<span>Lab</span></div>
       <p class="role">WebAuthn testing bench · runs locally · no server, nothing leaves the browser</p>
+      <button id="btn-mode" class="btn btn-quiet mode-toggle" hidden></button>
     </header>
 
+    <!-- First visit: pick a way in. Persisted to localStorage 'passkey-lab-mode'. -->
+    <section id="mode-choice" class="step landing" hidden aria-labelledby="landing-title">
+      <h1 id="landing-title" class="landing-title">Passkey Lab</h1>
+      <p class="landing-lede">See how passkeys actually work — by making one, using one, and watching what happens underneath. Nothing leaves this browser.</p>
+      <div class="actions-row landing-actions">
+        <button id="btn-mode-training" class="btn btn-primary">Guided lab — make one and see inside</button>
+        <button id="btn-mode-bench" class="btn">Open the bench — free-form testing</button>
+      </div>
+    </section>
+
+    <div id="bench-view" hidden>
     <!-- Signature: the relying-party readout. A passkey binds to this domain. -->
     <section class="readout" aria-labelledby="readout-title">
       <div class="readout-lead">
@@ -157,6 +169,9 @@
         </section>
       </div>
     </div>
+    </div><!-- /#bench-view -->
+
+    <div id="training-view" hidden></div>
 
     <footer class="colophon">
       <p>Static demo. No backend. Signatures are verified in-browser for teaching; a production relying party verifies server-side against the registered public key.</p>

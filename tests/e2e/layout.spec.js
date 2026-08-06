@@ -2,6 +2,10 @@
 // trace, and that nothing ever scrolls sideways or overlaps.
 
 import { test, expect } from "@playwright/test";
+import { seedMode } from "./helpers.js";
+
+// Every layout test measures the bench, so skip the first-visit mode choice.
+test.beforeEach(async ({ page }) => { await seedMode(page, "bench"); });
 
 const SIZES = [
   { name: "1366x768", width: 1366, height: 768, columns: 2 },

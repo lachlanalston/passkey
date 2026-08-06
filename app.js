@@ -15,6 +15,9 @@ import {
   registerPasskey, signIn, getAssertion, runPhishing,
 } from "./ceremonies.js";
 
+import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
+import { renderTraining } from "./training.js";
+
 const $ = (id) => document.getElementById(id);
 
 function log(msg, obj) {
@@ -528,10 +531,30 @@ function openInspectorAssertion() {
   });
 }
 
+// ---------- mode switching ----------
+function enterMode(mode) {
+  setMode(mode);
+  showView(mode);
+  if (mode === "training") renderTraining();
+  window.scrollTo(0, 0);
+}
+
+function wireMode() {
+  refreshLandingPrimary();
+  $("btn-mode-training").addEventListener("click", () => enterMode("training"));
+  $("btn-mode-bench").addEventListener("click", () => enterMode("bench"));
+  $("btn-mode").addEventListener("click", () => enterMode(getMode() === "training" ? "bench" : "training"));
+
+  const view = initialView();
+  showView(view);
+  if (view === "training") renderTraining();
+}
+
 // ---------- wire up ----------
 window.addEventListener("DOMContentLoaded", () => {
   detectEnv();
   renderTable();
+  wireMode();
   $("btn-create").addEventListener("click", createPasskey);
   $("btn-auth").addEventListener("click", () => authenticate("optional"));
   $("btn-autofill").addEventListener("click", () => authenticate("conditional"));
