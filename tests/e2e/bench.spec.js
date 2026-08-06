@@ -1,0 +1,188 @@
+// Bench regression — the guarantee that the core-module refactor changed nothing a user
+// can see. Covers create, sign-in, autofill, all five prove buttons, the raw inspector,
+// export/import and clear.
+
+import { test, expect } from "@playwright/test";
+import { addVirtualAuthenticator, removeAuthenticator, trace, gotoFresh } from "./helpers.js";
+
+let client, authenticatorId;
+
+test.beforeEach(async ({ page }) => {
+  await gotoFresh(page);
+  ({ client, authenticatorId } = await addVirtualAuthenticator(page));
+});
+
+test.afterEach(async () => {
+  if (client) await removeAuthenticator(client, authenticatorId).catch(() => {});
+});
+
+async function createOne(page) {
+  await page.click("#btn-create");
+  await expect(page.locator("#cred-table tbody tr")).toHaveCount(1);
+}
+
+test("create writes a record, a trace entry and an explainer", async ({ page }) => {
+  await createOne(page);
+  const t = await trace(page);
+  expect(t).toContain("navigator.credentials.create() request");
+  expect(t).toContain("Passkey created");
+  expect(t).toContain('"publicKeyStored": true');
+  await expect(page.locator("#explain")).toContainText("The public key is now saved here");
+  await expect(page.locator("#cred-table tbody tr td").nth(1)).toHaveText("demo.user@example.com");
+});
+
+test("sign-in verifies the real signature", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-auth");
+  await expect(page.locator("#log")).toContainText("sign-in verified");
+  const t = await trace(page);
+  expect(t).toContain('"signatureValid": true');
+  expect(t).toContain('"challengeEchoed": true');
+  await expect(page.locator("#explain")).toContainText("so this login is genuine and not a replay");
+  // sign-in counter on the ledger row ticks
+  await expect(page.locator("#cred-table tbody tr td").nth(4)).toHaveText("1");
+});
+
+test("sign-in with no stored passkey warns instead of throwing", async ({ page }) => {
+  await page.click("#btn-auth");
+  await expect(page.locator("#log")).toContainText("no stored passkeys for this site");
+  await expect(page.locator("#explain")).toContainText("Create one in step 1 first");
+});
+
+test("autofill requests conditional mediation", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-autofill");
+  await expect(page.locator("#log")).toContainText("mediation: conditional");
+  const t = await trace(page);
+  expect(t).toContain("empty → discoverable/any");
+});
+
+test("prove: phishing is blocked before any prompt", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-phish");
+  await expect(page.locator("#prove-out")).toContainText("Blocked — by the browser, before any prompt");
+  await expect(page.locator("#prove-out")).toContainText("Refused to reveal or use the credential");
+  await expect(page.locator("#log")).toContainText("BLOCKED (expected)");
+});
+
+test("prove: tamper rejects a flipped byte", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-tamper");
+  await expect(page.locator("#prove-out")).toContainText("Integrity verified — tampering rejected");
+  await expect(page.locator("#prove-out")).toContainText("INVALID — verification fails");
+});
+
+test("prove: replay is caught by the fresh challenge", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-replay");
+  await expect(page.locator("#prove-out")).toContainText("Rejected — replay caught");
+  await expect(page.locator("#prove-out")).toContainText("VALID — the cryptography is fine");
+});
+
+test("prove: only the matching key verifies", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-wrongkey");
+  await expect(page.locator("#prove-out")).toContainText("Only the matching key verifies");
+  await expect(page.locator("#prove-out")).toContainText("INVALID — verification fails");
+});
+
+test("prove: user verification is reported from the real flags", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-uv");
+  await expect(page.locator("#prove-out")).toContainText("Accepted — user was verified");
+  await expect(page.locator("#prove-out")).toContainText("yes — PIN or biometric checked");
+});
+
+test("raw inspector: registration record", async ({ page }) => {
+  await createOne(page);
+  await page.click("#cred-table button[data-raw]");
+  await expect(page.locator("#inspector")).toBeVisible();
+  await expect(page.locator("#insp-title")).toHaveText("Raw inspector — registration");
+  await expect(page.locator("#insp-body")).toContainText("authenticatorData");
+  await expect(page.locator("#insp-body")).toContainText("Attested public key (COSE)");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#inspector")).toBeHidden();
+});
+
+test("raw inspector: last sign-in re-verifies, and breaks when edited", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-auth");
+  await expect(page.locator("#log")).toContainText("sign-in verified");
+  await page.click("#btn-inspect");
+  await expect(page.locator("#insp-title")).toHaveText("Raw inspector — last sign-in");
+
+  await page.click("#insp-verify");
+  await expect(page.locator("#insp-result")).toContainText("VALID");
+  await expect(page.locator("#insp-result")).toContainText("message matches what was signed");
+
+  await page.fill("#insp-cd", '{"type":"webauthn.get","challenge":"tampered","origin":"https://evil.example"}');
+  await page.click("#insp-verify");
+  await expect(page.locator("#insp-result")).toContainText("INVALID");
+
+  await page.click("#insp-reset");
+  await page.click("#insp-verify");
+  await expect(page.locator("#insp-result")).toContainText("VALID");
+  await page.click("#insp-close");
+  await expect(page.locator("#inspector")).toBeHidden();
+});
+
+test("public key action prints a PEM to the trace", async ({ page }) => {
+  await createOne(page);
+  await page.click("#cred-table button[data-key]");
+  await expect(page.locator("#log")).toContainText("-----BEGIN PUBLIC KEY-----");
+});
+
+test("export then import round-trips the ledger", async ({ page }) => {
+  await createOne(page);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.click("#btn-export"),
+  ]);
+  const path = await download.path();
+  await expect(page.locator("#log")).toContainText("Exported credential list to JSON");
+
+  // wipe, then re-import the file just written
+  page.once("dialog", (d) => d.accept());
+  await page.click("#btn-clear");
+  await expect(page.locator("#cred-table tbody tr td.muted")).toHaveText("No passkeys stored yet.");
+
+  await page.setInputFiles("#import-file", path);
+  await expect(page.locator("#cred-table tbody tr")).toHaveCount(1);
+  await expect(page.locator("#log")).toContainText("Imported 1 new record(s)");
+});
+
+test("clear list empties the ledger only after confirming", async ({ page }) => {
+  await createOne(page);
+  page.once("dialog", (d) => d.dismiss());
+  await page.click("#btn-clear");
+  await expect(page.locator("#cred-table tbody tr")).toHaveCount(1);
+
+  page.once("dialog", (d) => d.accept());
+  await page.click("#btn-clear");
+  await expect(page.locator("#cred-table tbody tr td.muted")).toHaveText("No passkeys stored yet.");
+  await expect(page.locator("#log")).toContainText("Cleared local passkey list");
+});
+
+test("clear log empties the trace and hides the explainer", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-clearlog");
+  await expect(page.locator("#log")).toBeEmpty();
+  await expect(page.locator("#explain")).toBeHidden();
+});
+
+test("no console errors and no network calls beyond the static files", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const requests = [];
+  page.on("request", (r) => requests.push(r.url()));
+
+  await gotoFresh(page);
+  await createOne(page);
+  await page.click("#btn-auth");
+  await expect(page.locator("#log")).toContainText("sign-in verified");
+
+  expect(errors).toEqual([]);
+  const offSite = requests.filter((u) => !u.startsWith("http://localhost:8000/"));
+  expect(offSite).toEqual([]);
+});
