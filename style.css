@@ -200,6 +200,11 @@ body {
 /* ---------- forms ---------- */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem 1.1rem; margin-bottom: 1.1rem; }
 .grid-1 { grid-template-columns: 1fr; }
+/* Labels wrap to different line counts ("Findable by the site (discoverable)" takes three,
+   "Attestation" takes one), so the controls are pushed to the bottom of their cell — that
+   way the row of inputs lines up whatever the labels do. */
+.grid label > input,
+.grid label > select { margin-top: auto; }
 label {
   display: flex; flex-direction: column; gap: .35rem; min-width: 0;
   font-family: var(--mono); font-size: .66rem; text-transform: uppercase;
@@ -210,6 +215,8 @@ input[type="text"], select {
   font-family: var(--sans); font-size: .92rem; text-transform: none; letter-spacing: 0;
   color: var(--ink); background: var(--bg);
   border: 1px solid var(--rule); border-radius: 3px; padding: .55rem .65rem;
+  /* an input and a select do not agree on their intrinsic height, so pin both */
+  line-height: 1.4; height: calc(1.4em + 1.1rem + 2px);
 }
 input[type="text"]:focus-visible, select:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent);

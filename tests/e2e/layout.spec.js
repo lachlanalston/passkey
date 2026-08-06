@@ -185,3 +185,28 @@ test("panels sit flush in their rows — no hole under a short panel", async ({ 
   expect(gaps.underAuth).toBe(gaps.gap);
   expect(gaps.underReg).toBe(gaps.gap);
 });
+
+// Labels wrap to different line counts, so the controls must not follow them around.
+for (const width of [2560, 1920, 1600, 1366, 1100]) {
+  test(`registration inputs line up at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/index.html");
+
+    const rows = await page.evaluate(() => {
+      const ctrls = [...document.querySelectorAll(".b-reg .grid > label")].map((l) => {
+        const c = l.querySelector("input, select");
+        const r = c.getBoundingClientRect();
+        return { id: c.id, top: Math.round(r.top), height: Math.round(r.height) };
+      });
+      const grouped = {};
+      ctrls.forEach((c) => { const k = Math.round(c.top / 40); (grouped[k] ||= []).push(c); });
+      return {
+        spreads: Object.values(grouped).map((g) => Math.max(...g.map((c) => c.top)) - Math.min(...g.map((c) => c.top))),
+        heights: [...new Set(ctrls.map((c) => c.height))],
+      };
+    });
+
+    for (const s of rows.spreads) expect(s).toBe(0);   // every control in a row starts level
+    expect(rows.heights).toHaveLength(1);              // inputs and selects are the same height
+  });
+}
