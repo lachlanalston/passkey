@@ -273,7 +273,22 @@ select { cursor: pointer; }
 .btn-quiet { color: var(--ink-2); }
 .btn-file { display: inline-flex; align-items: center; }
 
-.prove-group { margin-bottom: .7rem; }
+.prove-lede { margin: 0 0 1rem; max-width: 62ch; font-size: .92rem; color: var(--ink); }
+.prove-group { margin-bottom: 1rem; }
+
+/* Each demo says what attack it runs, so the button label isn't the only clue. */
+.prove-list { margin: 0; padding: 0; list-style: none; }
+.prove-list li {
+  display: grid; grid-template-columns: minmax(9.5rem, auto) 1fr;
+  align-items: center; gap: .1rem .8rem; margin-bottom: .4rem;
+}
+.prove-list .btn { width: 100%; text-align: center; }
+.prove-list span { font-size: .84rem; color: var(--ink-2); }
+
+@media (max-width: 620px) {
+  .prove-list li { grid-template-columns: 1fr; gap: .3rem; margin-bottom: .8rem; }
+  .prove-list .btn { width: auto; justify-self: start; }
+}
 .prove-glabel {
   display: block; margin-bottom: .4rem;
   font-family: var(--mono); font-size: .62rem; text-transform: uppercase;
@@ -359,6 +374,19 @@ td.actions { white-space: nowrap; text-align: right; }
 }
 .cause b { color: var(--accent-ink); font-weight: 600; }
 .prove-bad .cause b { color: var(--bad); }
+
+/* The bridge from the demo back to the product they support — the bench's answer to the
+   rail's "The Entra connection" box. */
+.prove-entra {
+  margin: .7rem 0 0; padding: .6rem .8rem; max-width: 70ch;
+  font-size: .86rem; line-height: 1.5; color: var(--ink);
+  background: var(--bg); border-left: 3px solid var(--warn); border-radius: 3px;
+}
+.prove-entra > span {
+  display: inline-block; margin-right: .4rem;
+  font-family: var(--mono); font-size: .64rem; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--warn);
+}
 
 /* ---------- guided rail ---------- */
 .rail { max-width: 68rem; margin: 1.25rem auto 0; }
@@ -702,7 +730,7 @@ pre#log:empty::before {
   /* the rp domain is the hero — give it the full width and put the gauges in one row under
      it. Five across at this width leaves each gauge wide enough to keep its label and value
      on the same line, which is both tighter and less ragged than a stacked pair. */
-  .readout { grid-template-columns: 1fr; gap: .55rem; margin: .55rem 0; }
+  .readout { grid-template-columns: 1fr; gap: .5rem; margin: .4rem 0; }
   /* The hero domain and the sentence explaining it sit side by side rather than stacked —
      the width is there, and the height is the scarce thing at this breakpoint. */
   .readout-lead {
@@ -722,11 +750,18 @@ pre#log:empty::before {
   .cleanup-footer { margin-top: .5rem; }
   .cleanup-footer > summary { padding: .45rem .9rem; }
   .gauge { padding: .4rem .8rem; }
-  .masthead-note { margin-top: .35rem; }
+  .masthead-note { margin-top: .25rem; }
   /* four buttons in the authentication panel: keep them on one row at this width rather
      than wrapping and costing the tallest column another 40px */
   .b-auth .actions-row { gap: .4rem; }
   .b-auth .actions-row .btn { padding: .5rem .7rem; }
+  /* the prove-it panel carries five descriptions now, so it tightens up at this width */
+  .prove-lede { margin-bottom: .6rem; }
+  .b-prove h2 { margin-bottom: .6rem; }
+  .prove-group { margin-bottom: .6rem; }
+  .prove-glabel { margin-bottom: .25rem; }
+  .prove-list li { margin-bottom: .2rem; }
+  .prove-list .btn { padding: .45rem .7rem; }
   .step h2 { margin: .3rem 0 .8rem; }
   .grid { margin-bottom: .8rem; }
   .hint { margin-top: .7rem; }

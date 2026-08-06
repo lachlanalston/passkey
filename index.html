@@ -172,22 +172,28 @@
         <section class="step b-prove">
           <p class="eyebrow"><span class="idx">03</span> Prove it</p>
           <h2>Show why it's secure</h2>
+          <p class="prove-lede">Each button runs a real attack against the passkey you just made — then shows you exactly what stopped it.</p>
           <div class="prove-group">
             <span class="prove-glabel">The three pillars</span>
-            <div class="actions-row">
-              <button id="btn-phish" class="btn">Can't phish</button>
-              <button id="btn-tamper" class="btn">Can't tamper</button>
-              <button id="btn-replay" class="btn">Can't replay</button>
-            </div>
+            <ul class="prove-list">
+              <li><button id="btn-phish" class="btn">Can't phish</button>
+                <span>A lookalike domain asks the browser for your passkey.</span></li>
+              <li><button id="btn-tamper" class="btn">Can't tamper</button>
+                <span>One byte of a genuine login is altered in transit.</span></li>
+              <li><button id="btn-replay" class="btn">Can't replay</button>
+                <span>A real, valid login is captured and sent a second time.</span></li>
+            </ul>
           </div>
           <div class="prove-group">
             <span class="prove-glabel">Extra checks</span>
-            <div class="actions-row">
-              <button id="btn-wrongkey" class="btn">Wrong-key</button>
-              <button id="btn-uv" class="btn">Verification</button>
-            </div>
+            <ul class="prove-list">
+              <li><button id="btn-wrongkey" class="btn">Wrong-key</button>
+                <span>The signature is checked against somebody else's public key.</span></li>
+              <li><button id="btn-uv" class="btn">Verification</button>
+                <span>Did they just touch it, or prove who they are?</span></li>
+            </ul>
           </div>
-          <p class="hint"><strong>Phishing</strong> (wrong domain blocked), <strong>Tamper</strong> (altered signature fails), <strong>Replay</strong> (reused login rejected) — the three pillars. Plus <strong>Wrong-key</strong> (only the matching key verifies) and <strong>Verification</strong> (presence vs PIN/biometric). Create a passkey first, then run them.</p>
+          <p class="hint">All five need a passkey made on this site to work with — create one in step 1 first.</p>
           <div id="prove-out" class="prove-out" hidden></div>
         </section>
       </div>

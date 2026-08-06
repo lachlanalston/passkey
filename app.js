@@ -53,7 +53,8 @@ function renderProve(data) {
     `<span class="verdict verdict-${data.tone}">${data.verdict}</span>` +
     `<h3>${data.title}</h3>` +
     `<dl class="prove-rows">${rows}</dl>` +
-    `<p class="cause">${data.cause}</p>`;
+    `<p class="cause">${data.cause}</p>` +
+    (data.entra ? `<p class="prove-entra"><span>In Entra</span> ${data.entra}</p>` : "");
 }
 
 let lastAssertion = null; // populated on each successful sign-in, for the inspector
@@ -269,6 +270,7 @@ async function phishingTest() {
       { k: "What the browser did", v: "Refused to reveal or use the credential — no prompt shown" },
       { k: "Exact error thrown", v: esc(err.name + ": " + err.message) },
     ],
+    entra: "This is why a fake Microsoft 365 login page gets nothing, even when the user clicks the link and types their name. The browser refuses before Entra is ever contacted — there is no code to read out and no prompt to approve by mistake.",
     cause: `The blocker is the mismatch: the request claimed rpId <b>${esc(res.fakeRp)}</b>, but the passkey belongs to <b>${esc(res.realHost)}</b>. WebAuthn only releases a credential when the requested rpId matches the page's own origin, so the browser never even offered the passkey to the fake domain. A phishing page gets nothing — no key, no signature, nothing to relay. This check is in the browser itself; the user cannot be tricked into overriding it.`,
   });
 }
@@ -303,6 +305,7 @@ async function tamperTest() {
         { k: "Bytes that were signed", v: "authenticatorData + SHA-256(clientDataJSON)" },
         { k: "Checked with", v: esc(good.reason) },
       ],
+      entra: "Entra runs this same check on every single sign-in, server-side, against the public key it stored when the passkey was registered. There is no setting to turn it off and nothing for a user to click through.",
       cause: `The blocker is the math: the authenticator's private key signed those exact bytes, and the browser re-checks them against the stored public key. Flip a single bit and the signature no longer matches, so the check returns <b>false</b> and a real server rejects the login. This is what stops anyone altering a request or replaying a captured one — the signature is verified on every sign-in.`,
     });
   } catch (err) {
@@ -341,6 +344,7 @@ async function replayTest() {
       { k: "Do they match?", v: "NO", mark: "bad" },
       { k: "Server verdict", v: "Reject — this login was already used" },
     ],
+    entra: "It is why a captured Microsoft 365 sign-in cannot be resent. login.microsoftonline.com issues a new challenge every time, so yesterday's answer is already worthless.",
     cause: `The blocker is freshness: every sign-in gets a new random challenge that the authenticator signs. This captured login signed the <b>old</b> challenge, but the server has already issued a new one — so it refuses the request, even though the signature itself is perfectly valid. A recorded or stolen login can never be replayed.`,
   });
 }
@@ -379,6 +383,7 @@ async function wrongKeyTest() {
       { k: "Checked with", v: esc(right.reason) },
       { k: "The other key", v: `a fresh ${esc(algName(alg))} key — same algorithm, different pair` },
     ],
+    entra: "Entra stores only this public half. If that store were breached tomorrow, an attacker could verify signatures and still never make one — which is exactly what a stolen password database does not give you.",
     cause: `The blocker is identity: a signature only verifies against the one public key whose private half produced it. Swap in any other key and the check fails. The public key isn't secret — a server stores it, anyone can hold it — yet it still can't be used to forge a login, because forging needs the <b>private</b> key, which never leaves the authenticator.`,
   });
 }
@@ -407,6 +412,7 @@ async function uvTest() {
       { k: "Server policy", v: "UV required (phishing-resistant MFA)" },
       { k: "Verdict", v: pass ? "Accept" : "Reject" },
     ],
+    entra: "Entra's phishing-resistant MFA policy requires this bit to be set. A bare tap does not satisfy it, which is how one gesture counts as two factors — something you have, and something you are.",
     cause: `Two different guarantees. <b>Presence</b> (UP) only means someone touched the authenticator. <b>Verification</b> (UV) means they proved who they are with a PIN or biometric — that is the built-in second factor. A server enforcing phishing-resistant MFA (as Entra can) requires the UV bit set; a bare tap is not enough. Set User verification to "Required" above to force it.`,
   });
 }

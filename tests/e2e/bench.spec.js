@@ -262,3 +262,46 @@ test("the verdict is cleared the moment the next demo starts", async ({ page }) 
   await expect(page.locator("#prove-out h3")).toHaveText("Tamper test");
   await expect(page.locator("#prove-out")).toContainText("You cancelled, or it timed out");
 });
+
+test("each prove button says what attack it runs", async ({ page }) => {
+  await expect(page.locator(".prove-lede")).toHaveText(
+    "Each button runs a real attack against the passkey you just made — then shows you exactly what stopped it.");
+
+  const expected = [
+    ["#btn-phish", "A lookalike domain asks the browser for your passkey."],
+    ["#btn-tamper", "One byte of a genuine login is altered in transit."],
+    ["#btn-replay", "A real, valid login is captured and sent a second time."],
+    ["#btn-wrongkey", "The signature is checked against somebody else's public key."],
+    ["#btn-uv", "Did they just touch it, or prove who they are?"],
+  ];
+  for (const [btn, desc] of expected) {
+    const row = page.locator(".prove-list li", { has: page.locator(btn) });
+    await expect(row.locator("span")).toHaveText(desc);
+    // the description sits beside the button, not under it, at this width
+    const b = await page.locator(btn).boundingBox();
+    const s = await row.locator("span").boundingBox();
+    expect(s.x).toBeGreaterThan(b.x);
+  }
+});
+
+test("every prove result ties back to Entra", async ({ page }) => {
+  await createOne(page);
+  const expected = [
+    ["#btn-phish", "fake Microsoft 365 login page gets nothing"],
+    ["#btn-tamper", "Entra runs this same check on every single sign-in"],
+    ["#btn-replay", "login.microsoftonline.com issues a new challenge every time"],
+    ["#btn-wrongkey", "Entra stores only this public half"],
+    ["#btn-uv", "phishing-resistant MFA policy requires this bit"],
+  ];
+  for (const [btn, text] of expected) {
+    await page.click(btn);
+    await expect(page.locator("#prove-out .prove-entra")).toBeVisible();
+    await expect(page.locator("#prove-out .prove-entra")).toContainText(text);
+  }
+});
+
+test("the no-passkey and stopped cards carry no Entra line", async ({ page }) => {
+  await page.click("#btn-tamper");                       // empty ledger
+  await expect(page.locator("#prove-out .verdict")).toHaveText("Nothing to test yet");
+  await expect(page.locator("#prove-out .prove-entra")).toHaveCount(0);
+});
