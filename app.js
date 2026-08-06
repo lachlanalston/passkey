@@ -211,16 +211,36 @@ async function authenticate(mediation = "optional") {
   }
 }
 
-function proveNeedPasskey() {
+// Wipe the previous verdict the moment a new demo starts, so a stale card can never be
+// mistaken for the result of the button just pressed.
+function clearProve() {
+  const el = $("prove-out");
+  el.hidden = true;
+  el.innerHTML = "";
+}
+
+function proveNeedPasskey(test) {
   renderProve({
-    tone: "bad", verdict: "Nothing to test yet", title: "No passkey on this site",
+    tone: "bad", verdict: "Nothing to test yet", title: test || "No passkey on this site",
     rows: [{ k: "Needed", v: "a passkey created here", mark: "bad" }],
-    cause: "Create a passkey in step 1 first, then run this test.",
+    cause: "This demo needs a passkey made on this site to work with. Create one in step 1 first, then run it again.",
+  });
+}
+
+// A cancelled or failed demo gets a card of its own — every prove button always answers in
+// the same place.
+function proveStopped(test, err) {
+  renderProve({
+    tone: "bad", verdict: "Didn't run", title: test,
+    rows: [{ k: "What happened", v: esc(translateError(err)), mark: "bad" },
+           { k: "Reported as", v: esc(err.name) }],
+    cause: "Nothing was proved or disproved — the demo never got its signature. Run it again.",
   });
 }
 
 // ---------- phishing demo: ask for a passkey using the WRONG domain ----------
 async function phishingTest() {
+  clearProve();
   const realHost = rpId() || "(none)";
   const fakeRp = "attacker-" + (rpId() || "example") + ".example";
   log(`Phishing simulation — requesting a passkey with rpId "${fakeRp}" (not this origin)`, {
@@ -255,11 +275,13 @@ async function phishingTest() {
 
 // ---------- tamper demo: verify a real assertion, then a corrupted one ----------
 async function tamperTest() {
+  clearProve();
   const all = loadCreds();
   const allow = credsForSite();
   if (allow.length === 0) {
     log("WARNING — tamper test needs a passkey created here. Make one first.");
     explain("Create a passkey first, then run the tamper test.", "warn");
+    proveNeedPasskey("Tamper test");
     return;
   }
   log("Tamper test — obtaining one real signature, then re-checking it with a single flipped byte.");
@@ -286,17 +308,19 @@ async function tamperTest() {
   } catch (err) {
     log("ERROR — tamper test aborted: " + err.name + " — " + err.message);
     explain("Tamper test stopped. " + benchError(err), "warn");
+    proveStopped("Tamper test", err);
   }
 }
 
 // ---------- replay demo: a valid, untampered login still can't be reused ----------
 async function replayTest() {
+  clearProve();
   const c1 = randomBytes(32);
   log("Replay test — capturing one genuine sign-in, then resending it against a fresh challenge.");
   let r;
   try { r = await getAssertion(c1, $("userverification").value); }
-  catch (err) { log("ERROR — replay test aborted: " + err.name + " — " + err.message); explain("Replay test stopped. " + benchError(err), "warn"); return; }
-  if (r.none) { proveNeedPasskey(); return; }
+  catch (err) { log("ERROR — replay test aborted: " + err.name + " — " + err.message); explain("Replay test stopped. " + benchError(err), "warn"); proveStopped("Replay test", err); return; }
+  if (r.none) { proveNeedPasskey("Replay test"); return; }
 
   const resp = r.assertion.response;
   const record = r.all.find((c) => c.id === r.assertion.id);
@@ -323,12 +347,13 @@ async function replayTest() {
 
 // ---------- wrong-key demo: signature only verifies against its own public key ----------
 async function wrongKeyTest() {
+  clearProve();
   const chal = randomBytes(32);
   log("Wrong-key test — verifying one real signature against the correct key, then a different key.");
   let r;
   try { r = await getAssertion(chal, $("userverification").value); }
-  catch (err) { log("ERROR — wrong-key test aborted: " + err.name + " — " + err.message); explain("Wrong-key test stopped. " + benchError(err), "warn"); return; }
-  if (r.none) { proveNeedPasskey(); return; }
+  catch (err) { log("ERROR — wrong-key test aborted: " + err.name + " — " + err.message); explain("Wrong-key test stopped. " + benchError(err), "warn"); proveStopped("Wrong-key test", err); return; }
+  if (r.none) { proveNeedPasskey("Wrong-key test"); return; }
 
   const resp = r.assertion.response;
   const record = r.all.find((c) => c.id === r.assertion.id);
@@ -360,13 +385,14 @@ async function wrongKeyTest() {
 
 // ---------- UV demo: presence vs verification (the second factor) ----------
 async function uvTest() {
+  clearProve();
   const chal = randomBytes(32);
   const requested = $("userverification").value;
   log(`User-verification test — signing in with userVerification="${requested}", then applying a "UV required" server policy.`);
   let r;
   try { r = await getAssertion(chal, requested); }
-  catch (err) { log("ERROR — UV test aborted: " + err.name + " — " + err.message); explain("UV test stopped. " + benchError(err), "warn"); return; }
-  if (r.none) { proveNeedPasskey(); return; }
+  catch (err) { log("ERROR — UV test aborted: " + err.name + " — " + err.message); explain("UV test stopped. " + benchError(err), "warn"); proveStopped("User-verification test", err); return; }
+  if (r.none) { proveNeedPasskey("User-verification test"); return; }
 
   const flags = parseAuthData(new Uint8Array(r.assertion.response.authenticatorData));
   const pass = flags.userVerified;

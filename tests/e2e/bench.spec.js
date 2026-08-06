@@ -215,3 +215,50 @@ test("no console errors and no network calls beyond the static files", async ({ 
   const offSite = requests.filter((u) => !u.startsWith("http://localhost:8000/"));
   expect(offSite).toEqual([]);
 });
+
+test("every prove button answers in the same place when there is no passkey", async ({ page }) => {
+  // no createOne() — the ledger is empty on purpose
+  const cases = [
+    ["#btn-tamper", "Tamper test"],
+    ["#btn-replay", "Replay test"],
+    ["#btn-wrongkey", "Wrong-key test"],
+    ["#btn-uv", "User-verification test"],
+  ];
+  for (const [btn, title] of cases) {
+    await page.click(btn);
+    await expect(page.locator("#prove-out")).toBeVisible();
+    await expect(page.locator("#prove-out .verdict")).toHaveText("Nothing to test yet");
+    await expect(page.locator("#prove-out h3")).toHaveText(title);
+    await expect(page.locator("#prove-out")).toContainText("Create one in step 1 first");
+  }
+});
+
+test("a second demo replaces the first verdict instead of leaving it up", async ({ page }) => {
+  // The reported bug: phish (which needs no passkey) leaves "Blocked", then tamper appeared
+  // to do nothing because it only wrote to the trace.
+  await page.click("#btn-phish");
+  await expect(page.locator("#prove-out .verdict")).toHaveText("Blocked — by the browser, before any prompt");
+
+  await page.click("#btn-tamper");
+  await expect(page.locator("#prove-out .verdict")).toHaveText("Nothing to test yet");
+  await expect(page.locator("#prove-out h3")).toHaveText("Tamper test");
+  await expect(page.locator("#prove-out")).not.toContainText("Blocked — by the browser");
+});
+
+test("the verdict is cleared the moment the next demo starts", async ({ page }) => {
+  await createOne(page);
+  await page.click("#btn-tamper");
+  await expect(page.locator("#prove-out .verdict")).toHaveText("Integrity verified — tampering rejected");
+
+  // Break the demo mid-flight: with no authenticator the get() is refused, and the stale
+  // "Integrity verified" must not survive it.
+  await removeAuthenticator(client, authenticatorId);
+  ({ client, authenticatorId } = await addVirtualAuthenticator(page, {
+    hasUserVerification: false, isUserVerified: false,
+  }));
+  await page.selectOption("#userverification", "required");
+  await page.click("#btn-tamper");
+  await expect(page.locator("#prove-out .verdict")).toHaveText("Didn't run");
+  await expect(page.locator("#prove-out h3")).toHaveText("Tamper test");
+  await expect(page.locator("#prove-out")).toContainText("You cancelled, or it timed out");
+});
