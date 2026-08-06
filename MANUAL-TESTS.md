@@ -22,6 +22,52 @@ Date:            Browser/version:            OS:            Presenting on:
 
 ---
 
+## What the automated tests cannot see
+
+The suites drive a Chromium **virtual** authenticator. It only ever reports ES256, an unknown
+AAGUID, and `backupEligible: false` — so these four areas have never executed in a real
+browser, no matter how green the tests are:
+
+| Unproven | Why it matters | Covered by |
+|---|---|---|
+| **RS256 verification** | Windows Hello commonly issues RS256, not ES256. The code path is unit-tested but has never run end to end. | Tier 1 |
+| **AAGUID → wallet name** | The virtual authenticator always maps to "Unknown". Every entry in the wallet list is unexercised. | Tier 1 |
+| **Synced passkeys (BE/BS set)** | `syncLabel`, Step 3's "that's a synced passkey, live" highlight and the X-ray's *backed up: yes* row have never fired. | Tier 2 |
+| **Hybrid / QR transport** | Steps 3 and 4 in their entirety — the QR handshake and the Bluetooth failure. | Tier 2 |
+
+**Tier 1 is 10 minutes on your own laptop with no phone, and closes half the risk.** Do that
+first even if you never get to the rest.
+
+---
+
+## Tier 1 — 10 minutes, laptop only *(do this first)*
+
+No phone needed. This is the highest value per minute in the whole document.
+
+- [ ] §1 — make a passkey with your real fingerprint/face/PIN
+- [ ] **Check the ledger's Wallet column names your authenticator** (Windows Hello, iCloud
+      Keychain, Chrome on Mac…) and does **not** say "Unknown". If it says Unknown, note the
+      AAGUID here — it needs adding to the list: `________________________________`
+- [ ] **Open the record card (Public key) and note the algorithm:** `ES256 / RS256`
+      — if RS256, that branch has just run for the first time. Confirm the X-ray's
+      verification node still shows **VALID**.
+- [ ] §2 — timed sign-in, X-ray node 5 shows VALID
+- [ ] §6 — "Prove it's gone" fails while the passkey exists, then succeeds after you delete it
+- [ ] §7 — print preview is light and legible
+- [ ] §10 — the bench pass
+
+## Tier 2 — needs a phone *(the two steps with no automated cover at all)*
+
+- [ ] §3 — phone passkey over QR, and the **synced** highlight appears
+- [ ] §4 — Bluetooth off → fail → on → succeed
+
+## Tier 3 — before the session itself
+
+- [ ] §8 — LastPass
+- [ ] §9 — layout matrix on the actual projector
+
+---
+
 ## 0 — Before you start
 
 - [ ] Delete any existing "Passkey Lab" passkeys from the device store (see §6), so Step 1
@@ -196,6 +242,30 @@ Automated already, but quick to sanity-check on real hardware:
 - [ ] **Public key** opens the record card with the PEM
 - [ ] Export JSON, Clear list, Import the file back
 - [ ] Switch to the guided lab and back from the masthead
+
+---
+
+## If something fails live
+
+Worth deciding before you're standing in front of people.
+
+**Step 3 or 4 won't work (no QR, phone won't pair, Bluetooth flaky on the venue's network).**
+Use the skip link on Step 3. Step 4 then swaps to the written walkthrough with its own
+checkbox, and the lab continues to completion. Nothing downstream depends on the phone
+passkey — Step 4 falls back to the Step-1 credential and Step 6 works either way. Talk through
+the walkthrough copy instead; it describes the exact ticket.
+
+**The wallet shows "Unknown".** Harmless — the AAGUID list is deliberately incomplete and the
+lab says so. Everything else still works; you just lose the "and here's which vault it went
+to" line.
+
+**No built-in authenticator on the presenting machine.** Step 1 drops the platform constraint
+automatically and says so, then offers a phone or security key. Bring a YubiKey as a backup —
+it also gets you a **non-zero sign counter**, which is the one thing a synced passkey can't
+demonstrate.
+
+**Nothing works at all.** The bench is independent of the rail. `localhost` works with no
+network. Worst case, present from `npm run serve` on the laptop.
 
 ---
 
