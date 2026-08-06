@@ -8,6 +8,7 @@ import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSit
 import { translateError, cleanupListHtml, openRecordCard } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
+import { TWIN_URL } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -141,8 +142,18 @@ function stepper() {
 
 function actionsFor(s) {
   const bits = [`<button type="button" id="rail-primary" class="btn btn-primary">${esc(s.primary)}</button>`];
+  // The in-page demo is the proof; the twin is the attacker's-eye view, and only exists if
+  // one has been deployed to a different registrable domain.
+  if (s.n === 5 && TWIN_URL) bits.push(`<button type="button" id="rail-twin" class="btn">Open the fake site</button>`);
   if (s.n === 3) bits.push(`<button type="button" id="rail-skip" class="link rail-skip">${esc(s.skip)}</button>`);
   return `<div class="actions-row rail-actions">${bits.join("")}</div>`;
+}
+
+function openTwin() {
+  const frag = new URLSearchParams();
+  if (state.step1CredId) frag.set("cred", state.step1CredId);
+  frag.set("rp", location.hostname);
+  window.open(`${TWIN_URL}#${frag.toString()}`, "_blank", "noopener");
 }
 
 function bodyFor(s) {
@@ -219,6 +230,7 @@ function render() {
   }
 
   $("rail-primary").addEventListener("click", () => runStep(s.n));
+  if ($("rail-twin")) $("rail-twin").addEventListener("click", openTwin);
   if ($("rail-skip")) $("rail-skip").addEventListener("click", skipPhone);
   if ($("rail-check")) $("rail-check").addEventListener("change", (e) => {
     if (e.target.checked) {

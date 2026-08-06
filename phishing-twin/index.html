@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>Passkey Lab — the fake site</title>
+  <meta name="description" content="A deliberately fake copy of Passkey Lab, on a different domain, that tries and fails to use your passkey." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="stylesheet" href="twin.css" />
+</head>
+<body>
+  <div class="frame">
+    <p class="warning-strip">This is a deliberate fake, built for a training lab. It is not a real sign-in page and it collects nothing.</p>
+
+    <header class="masthead">
+      <div class="mark">Passkey<span>Lab</span></div>
+      <p class="role">sign in to continue</p>
+    </header>
+
+    <section class="panel">
+      <p class="eyebrow">The attacker's point of view</p>
+      <h1>Give me your passkey</h1>
+      <p class="lede">
+        This page is a knock-off of the lab, served from a completely different domain. It has
+        your credential ID — the part that isn't secret. Now watch it try to use it.
+      </p>
+
+      <dl class="facts">
+        <div class="fact"><dt>You are on</dt><dd id="fake-origin">…</dd></div>
+        <div class="fact"><dt>The real lab is</dt><dd id="real-host">…</dd></div>
+        <div class="fact"><dt>Credential ID it was given</dt><dd id="cred-id">none — open this page from Step 5 of the lab</dd></div>
+      </dl>
+
+      <div class="actions">
+        <button id="btn-steal" class="btn btn-primary">Try to use the passkey</button>
+        <a id="back" class="btn" href="#">Back to the lab</a>
+      </div>
+
+      <div id="out" class="out" aria-live="polite"></div>
+    </section>
+
+    <footer class="colophon">
+      <p>Nothing on this page is sent anywhere. There is no server, no form and no storage — the
+      whole point is that a page like this gets nothing even when it tries.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="twin.js"></script>
+</body>
+</html>
