@@ -10,3 +10,13 @@ Thumbs.db
 
 # Node (only used for local tooling; never part of the deploy)
 node_modules/
+
+# Local-only working documents — never commit, never push
+passkeylabtrainingmodeSPEC.md
+passkey-lab-training-mode-SPEC.md
+IMPLEMENTATION-NOTES.md
+
+# Test output
+test-results/
+playwright-report/
+.playwright/
