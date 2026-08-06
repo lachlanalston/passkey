@@ -151,7 +151,7 @@ test("step 5 completes on the browser blocking the wrong identity", async ({ pag
 
   await page.click("#rail-primary");
   await expect(page.locator("#rail-out .verdict")).toHaveText("Blocked — by the browser, before any prompt");
-  await expect(page.locator("#rail-out")).toContainText("Refused to reveal or use the credential");
+  await expect(page.locator("#rail-out .phish-wall-label")).toHaveText("Browser refuses");
   await expect(page.locator('.stepper-item:nth-child(5)')).toHaveClass(/is-done/);
 });
 
@@ -250,4 +250,31 @@ test("the walkthrough variant gets its own checkbox explanation", async ({ page 
   await expect(page.locator(".rail-check-note")).toHaveText(
     "Tick the box when you've read it — that completes the step.");
   await expect(page.locator(".rail-check")).toContainText("I read the failure walkthrough");
+});
+
+test("step 5 draws the attempt instead of only describing it", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("passkey-lab-training", JSON.stringify({
+    step: 5, completed: [1, 2, 3, 4], step1CredId: "x", startedAt: "t",
+  })));
+  await page.reload();
+  await page.click("#rail-primary");
+
+  const viz = page.locator("#rail-out .phish-viz");
+  await expect(viz).toBeVisible();
+  await expect(viz.locator(".phish-attacker .phish-domain")).toContainText("attacker-");
+  await expect(viz.locator(".phish-wall-label")).toHaveText("Browser refuses");
+  await expect(viz.locator(".phish-wall-sub")).toHaveText("before any prompt");
+  await expect(viz.locator(".phish-real .phish-domain")).toHaveText("localhost");
+  await expect(viz.locator(".phish-real")).toHaveClass(/is-untouched/);
+
+  // the wall sits between the two sides, left to right
+  const [atk, wall, real] = await Promise.all(
+    [".phish-attacker", ".phish-wall", ".phish-real"].map((s) =>
+      viz.locator(s).evaluate((e) => e.getBoundingClientRect().left)));
+  expect(wall).toBeGreaterThan(atk);
+  expect(real).toBeGreaterThan(wall);
+
+  // and it is described for screen readers, not left as decoration
+  await expect(viz).toHaveAttribute("role", "img");
+  await expect(viz).toHaveAttribute("aria-label", /never contacted/);
 });

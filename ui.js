@@ -97,6 +97,35 @@ export function recordCardHtml(rec) {
 
 export const openRecordCard = (rec) => openModal("Everything the site knows about you", recordCardHtml(rec));
 
+// ---------- the phishing attempt, drawn ----------
+// The block is the whole lesson, and a paragraph is a poor way to show a request being
+// refused. Three panels: who asked, the wall, and the passkey that was never woken up.
+export function phishDiagramHtml({ fakeRp, realHost, blocked, errName }) {
+  return `<div class="phish-viz" role="img"
+    aria-label="The fake site ${esc(fakeRp)} asked for a passkey bound to ${esc(realHost)}. The browser refused before any prompt; the authenticator was never contacted.">
+    <div class="phish-side phish-attacker">
+      <p class="eyebrow">The fake site</p>
+      <p class="phish-domain">${esc(fakeRp)}</p>
+      <p class="phish-note">Asks the browser for your passkey, by name. It even has the credential ID — that part was never secret.</p>
+    </div>
+
+    <div class="phish-wall${blocked ? "" : " is-open"}">
+      <span class="phish-mark" aria-hidden="true">${blocked ? "✕" : "!"}</span>
+      <span class="phish-wall-label">${blocked ? "Browser refuses" : "Not blocked"}</span>
+      <span class="phish-wall-sub">${blocked ? "before any prompt" : "check the environment"}</span>
+      ${errName ? `<span class="phish-wall-err mono">${esc(errName)}</span>` : ""}
+    </div>
+
+    <div class="phish-side phish-real${blocked ? " is-untouched" : ""}">
+      <p class="eyebrow">Your passkey</p>
+      <p class="phish-domain">${esc(realHost)}</p>
+      <p class="phish-note">${blocked
+        ? "Never asked. Never woke up. Never signed. There was no prompt for anyone to approve by mistake."
+        : "The browser released a credential — this should not happen."}</p>
+    </div>
+  </div>`;
+}
+
 // ---------- error translation ----------
 // WebAuthn's DOMException names mean nothing to an L1 tech. The rail always shows the
 // translation; the bench shows the translation plus the raw name, because on the bench the

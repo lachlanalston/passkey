@@ -18,7 +18,7 @@ import { getMode, setMode, clearMode, showView, refreshLandingPrimary, initialVi
 import { renderTraining } from "./training.js";
 import {
   section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
-  openRecordCard, cleanupListHtml, translateError, isFirefoxOnLinux,
+  openRecordCard, cleanupListHtml, translateError, isFirefoxOnLinux, phishDiagramHtml,
 } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 
@@ -52,6 +52,7 @@ function renderProve(data) {
   el.innerHTML =
     `<span class="verdict verdict-${data.tone}">${data.verdict}</span>` +
     `<h3>${data.title}</h3>` +
+    (data.visual || "") +
     `<dl class="prove-rows">${rows}</dl>` +
     `<p class="cause">${data.cause}</p>` +
     (data.entra ? `<p class="prove-entra"><span>In Entra</span> ${data.entra}</p>` : "");
@@ -263,11 +264,9 @@ async function phishingTest() {
     tone: "ok",
     verdict: "Blocked — by the browser, before any prompt",
     title: "Phishing simulation",
+    visual: phishDiagramHtml({ fakeRp: res.fakeRp, realHost: res.realHost, blocked: true, errName: err.name }),
     rows: [
-      { k: "Fake site asked for (rpId)", v: esc(res.fakeRp), mark: "bad" },
       { k: "Real page origin", v: esc(res.realOrigin) },
-      { k: "Passkey is bound to", v: esc(res.realHost), mark: "ok" },
-      { k: "What the browser did", v: "Refused to reveal or use the credential — no prompt shown" },
       { k: "Exact error thrown", v: esc(err.name + ": " + err.message) },
     ],
     entra: "This is why a fake Microsoft 365 login page gets nothing, even when the user clicks the link and types their name. The browser refuses before Entra is ever contacted — there is no code to read out and no prompt to approve by mistake.",

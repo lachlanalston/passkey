@@ -514,7 +514,7 @@ td.actions { white-space: nowrap; text-align: right; }
 .xray-badge strong { color: var(--bad); }
 
 .xray-lanes { display: none; }
-.xray-nodes { display: grid; grid-template-columns: minmax(0, 1fr); gap: .7rem; }
+.xray-nodes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 
 .xray-node {
   position: relative; min-width: 0;
@@ -550,13 +550,13 @@ td.actions { white-space: nowrap; text-align: right; }
 /* Connector to the next node. Stacked layout runs everything straight down; the two-lane
    breakpoint sends the crossings sideways instead (see the min-width block below). */
 .xray-conn {
-  position: absolute; pointer-events: none;
-  left: 50%; top: 100%; width: 0; height: .8rem;
-  border-left: 2px dashed var(--accent); transform: translateX(-50%);
+  position: absolute; pointer-events: none; z-index: 2;
+  left: 50%; top: 100%; width: 0; height: 1.35rem;
+  border-left: 3px dashed var(--accent); transform: translateX(-50%);
 }
 .xray-conn::after {
-  content: ""; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
-  border: 5px solid transparent; border-top-color: var(--accent);
+  content: ""; position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%);
+  border: 7px solid transparent; border-top-color: var(--accent);
 }
 
 .xray-more, .xray-raw { margin-top: .5rem; }
@@ -578,7 +578,7 @@ td.actions { white-space: nowrap; text-align: right; }
     color: var(--ink-3);
   }
   .xray-lane-head.lane-auth { text-align: right; }
-  .xray-nodes { grid-template-columns: 1fr 1fr; column-gap: 3rem; row-gap: .7rem; }
+  .xray-nodes { grid-template-columns: 1fr 1fr; column-gap: 3.5rem; row-gap: 2rem; }
   .xray-node.lane-site { grid-column: 1; }
   .xray-node.lane-auth { grid-column: 2; }
   .xray-node .xray-lane-label { display: none; }
@@ -587,23 +587,68 @@ td.actions { white-space: nowrap; text-align: right; }
      height and points into its neighbour. Node 5 sits a row below node 4, so that one leaves
      the bottom edge and turns down over the lane it is heading for. */
   .xray-node.connect-across > .xray-conn {
-    width: 3rem; height: 0; border-left: 0; border-top: 2px dashed var(--accent);
+    width: 3.5rem; height: 0; border-left: 0; border-top: 3px dashed var(--accent);
     transform: none;
   }
   .xray-node.lane-site.connect-across > .xray-conn { top: 2.4rem; left: 100%; right: auto; }
   .xray-node.lane-site.connect-across > .xray-conn::after {
-    top: 50%; bottom: auto; left: auto; right: -1px;
+    top: 50%; bottom: auto; left: auto; right: -7px;
     transform: translateY(-50%);
     border-top-color: transparent; border-left-color: var(--accent);
   }
 
   .xray-node.lane-auth.connect-across > .xray-conn {
-    top: auto; bottom: -.9rem; right: 100%; left: auto;
+    top: auto; bottom: -1rem; right: 100%; left: auto;
   }
   .xray-node.lane-auth.connect-across > .xray-conn::after {
-    top: -3px; bottom: auto; left: -2px; right: auto; transform: none;
+    top: -4px; bottom: auto; left: -7px; right: auto; transform: none;
     border-top-color: var(--accent);
   }
+}
+
+/* ---------- the phishing attempt, drawn ----------
+   Who asked, the wall, and the passkey that was never woken up. */
+.phish-viz {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch;
+  gap: .8rem; margin: 0 0 .9rem;
+}
+.phish-side {
+  padding: .8rem .9rem;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 3px;
+}
+.phish-attacker { border-left: 3px solid var(--bad); }
+.phish-attacker .eyebrow { color: var(--bad); }
+.phish-real { border-left: 3px solid var(--accent); }
+.phish-real .eyebrow { color: var(--accent-ink); }
+.phish-real.is-untouched { opacity: .72; }
+.phish-domain {
+  margin: .3rem 0 .45rem; font-family: var(--mono); font-size: .88rem;
+  color: var(--ink); word-break: break-all; line-height: 1.3;
+}
+.phish-attacker .phish-domain { color: var(--bad); }
+.phish-real .phish-domain { color: var(--accent-ink); }
+.phish-note { margin: 0; font-size: .82rem; color: var(--ink-2); }
+
+.phish-wall {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .15rem; padding: .6rem .9rem; min-width: 9rem;
+  background: var(--bg);
+  border: 1px dashed var(--bad); border-radius: 3px;
+}
+.phish-mark { font-size: 1.9rem; line-height: 1; color: var(--bad); font-weight: 700; }
+.phish-wall-label {
+  font-family: var(--mono); font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--bad); text-align: center;
+}
+.phish-wall-sub { font-size: .74rem; color: var(--ink-3); text-align: center; }
+.phish-wall-err { font-size: .66rem; color: var(--ink-3); margin-top: .2rem; }
+.phish-wall.is-open { border-color: var(--warn); }
+.phish-wall.is-open .phish-mark,
+.phish-wall.is-open .phish-wall-label { color: var(--warn); }
+
+@media (max-width: 760px) {
+  .phish-viz { grid-template-columns: minmax(0, 1fr); }
+  .phish-wall { min-width: 0; flex-direction: row; gap: .6rem; }
 }
 
 /* ---------- record card ---------- */

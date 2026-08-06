@@ -61,7 +61,9 @@ test("prove: phishing is blocked before any prompt", async ({ page }) => {
   await createOne(page);
   await page.click("#btn-phish");
   await expect(page.locator("#prove-out")).toContainText("Blocked — by the browser, before any prompt");
-  await expect(page.locator("#prove-out")).toContainText("Refused to reveal or use the credential");
+  // what the credential did (nothing) is now drawn rather than written
+  await expect(page.locator("#prove-out .phish-wall-label")).toHaveText("Browser refuses");
+  await expect(page.locator("#prove-out .phish-real")).toContainText("Never asked. Never woke up. Never signed.");
   await expect(page.locator("#log")).toContainText("BLOCKED (expected)");
 });
 

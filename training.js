@@ -5,7 +5,7 @@
 
 import { esc, randomBytes, syncLabel } from "./core.js";
 import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
-import { translateError, cleanupListHtml, openRecordCard } from "./ui.js";
+import { translateError, cleanupListHtml, openRecordCard, phishDiagramHtml } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
 import { TWIN_URL } from "./config.js";
@@ -325,7 +325,7 @@ function wireOut() {
 }
 
 // tone: ok | warn | bad
-function resultCard({ tone = "ok", verdict, headline, rows = [], note = "" }) {
+function resultCard({ tone = "ok", verdict, headline, rows = [], note = "", visual = "" }) {
   const rowHtml = rows.length
     ? `<dl class="prove-rows">` + rows.map((r) =>
         `<div class="prow ${r.mark || ""}"><dt>${esc(r.k)}</dt><dd>${r.v}</dd></div>`).join("") + `</dl>`
@@ -333,6 +333,7 @@ function resultCard({ tone = "ok", verdict, headline, rows = [], note = "" }) {
   return `<div class="prove-out prove-${tone} rail-result">
     ${verdict ? `<span class="verdict verdict-${tone}">${esc(verdict)}</span>` : ""}
     ${headline ? `<h3>${headline}</h3>` : ""}
+    ${visual}
     ${rowHtml}
     ${note ? `<p class="cause">${note}</p>` : ""}
   </div>`;
@@ -529,14 +530,12 @@ async function stepPhish() {
     tone: "ok",
     verdict: "Blocked — by the browser, before any prompt",
     headline: "Nothing was offered, nothing was signed, nothing leaked.",
+    visual: phishDiagramHtml({ fakeRp: res.fakeRp, realHost: res.realHost, blocked: true, errName: res.err.name }),
     rows: [
-      { k: "Fake site asked for (rpId)", v: esc(res.fakeRp), mark: "bad" },
       { k: "Real page origin", v: esc(res.realOrigin) },
-      { k: "Passkey is bound to", v: esc(res.realHost), mark: "ok" },
-      { k: "What the browser did", v: "Refused to reveal or use the credential — no prompt shown" },
       { k: "Exact error thrown", v: esc(res.err.name + ": " + res.err.message) },
     ],
-    note: `The blocker is the mismatch: the request claimed rpId <b>${esc(res.fakeRp)}</b>, but the passkey belongs to <b>${esc(res.realHost)}</b>. WebAuthn only releases a credential when the requested rpId matches the page's own origin, so the browser never even offered the passkey to the fake domain. A phishing page gets nothing — no key, no signature, nothing to relay. This check is in the browser itself; the user cannot be tricked into overriding it.`,
+    note: `The check lives in the browser, not in the site and not in the user. There is no button to click through, no warning to dismiss and no way to be talked into it over the phone — which is what makes this different from every other anti-phishing control you have ever supported.`,
   }));
 }
 

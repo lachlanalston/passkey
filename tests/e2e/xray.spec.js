@@ -203,3 +203,23 @@ test("stacked below 1024px, every connector runs straight down", async ({ page }
     els.every((e) => { const r = e.getBoundingClientRect(); return r.height > r.width; }));
   expect(vertical).toBe(true);
 });
+
+test("the connectors have room to be seen and are not clipped by the next card", async ({ page }) => {
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await railTo2(page);
+
+  const geom = await page.evaluate(() => {
+    const nodes = [...document.querySelectorAll("#rail-out .xray-node")];
+    const rowGap = parseFloat(getComputedStyle(document.querySelector("#rail-out .xray-nodes")).rowGap);
+    return nodes.filter((n) => n.querySelector(".xray-conn")).map((n) => {
+      const c = n.querySelector(".xray-conn").getBoundingClientRect();
+      return { down: n.classList.contains("connect-down"), h: c.height, w: c.width, rowGap };
+    });
+  });
+
+  for (const g of geom) {
+    // the vertical connectors must fit inside the row gap, not run under the next card
+    if (g.down) expect(g.h).toBeLessThanOrEqual(g.rowGap);
+    expect(g.h + g.w).toBeGreaterThan(20);   // actually drawn, not a hairline
+  }
+});
