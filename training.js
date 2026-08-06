@@ -164,8 +164,15 @@ function bodyFor(s) {
 
 function checkboxFor(s) {
   if (s.n !== 4) return "";
-  const label = (state.step3Skipped && !state.step3CredId) ? "I read the failure walkthrough" : s.check;
-  return `<label class="rail-check"><input type="checkbox" id="rail-check"${isDone(4) ? " checked" : ""} />
+  const walkthrough = state.step3Skipped && !state.step3CredId;
+  const label = walkthrough ? "I read the failure walkthrough" : s.check;
+  // Without this line the checkbox arrives unexplained: running the step completes it on its
+  // own, so the box only exists for people who can't run it right now.
+  const note = walkthrough
+    ? "Tick the box when you've read it — that completes the step."
+    : "Running it and watching it fail, then fixing it, completes this step on its own. No phone to hand, or already seen it? Tick the box below instead.";
+  return `<p class="rail-check-note">${esc(note)}</p>
+    <label class="rail-check"><input type="checkbox" id="rail-check"${isDone(4) ? " checked" : ""} />
     <span>${esc(label)}</span></label>`;
 }
 

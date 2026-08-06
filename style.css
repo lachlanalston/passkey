@@ -376,11 +376,16 @@ td.actions { white-space: nowrap; text-align: right; }
 .rail-actions { margin: 1.1rem 0 0; }
 .rail-actions .btn-primary { font-size: .82rem; padding: .65rem 1.25rem; }
 .rail-skip { margin-left: .4rem; font-size: .78rem; }
+/* `label` is flex-column site-wide, so the direction has to be reset here or the box floats
+   above its own text. */
 .rail-check {
-  display: flex; align-items: center; gap: .55rem; margin: .9rem 0 0;
+  display: flex; flex-direction: row; align-items: center; justify-content: flex-start;
+  gap: .55rem; margin: .5rem 0 0; width: fit-content; cursor: pointer;
   font-family: var(--sans); font-size: .9rem; text-transform: none; letter-spacing: 0; color: var(--ink);
 }
-.rail-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); flex: none; }
+.rail-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); flex: none; margin: 0; }
+.rail-check:hover { color: var(--accent-ink); }
+.rail-check-note { margin: 1.1rem 0 0; max-width: 62ch; font-size: .84rem; color: var(--ink-2); }
 
 /* The Entra connection — the bridge from the lab back to the product they support. */
 .entra {
@@ -492,6 +497,18 @@ td.actions { white-space: nowrap; text-align: right; }
 .xray-tick.is-on { color: var(--accent); }
 .xray-full { word-break: break-all; margin: .3rem 0 0; font-size: .74rem; color: var(--accent-ink); }
 
+/* Connector to the next node. Stacked layout runs everything straight down; the two-lane
+   breakpoint sends the crossings sideways instead (see the min-width block below). */
+.xray-conn {
+  position: absolute; pointer-events: none;
+  left: 50%; top: 100%; width: 0; height: .8rem;
+  border-left: 2px dashed var(--accent); transform: translateX(-50%);
+}
+.xray-conn::after {
+  content: ""; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--accent);
+}
+
 .xray-more, .xray-raw { margin-top: .5rem; }
 .xray-more > summary, .xray-raw > summary {
   cursor: pointer; font-family: var(--mono); font-size: .68rem;
@@ -516,19 +533,27 @@ td.actions { white-space: nowrap; text-align: right; }
   .xray-node.lane-auth { grid-column: 2; }
   .xray-node .xray-lane-label { display: none; }
 
-  /* the crossing: an arrow drawn into the gutter, pointing the way the bytes went */
-  .xray-node.has-wire::after {
-    content: ""; position: absolute; top: 1.6rem;
-    width: 3rem; border-top: 1px dashed var(--accent);
+  /* The crossings. Nodes 2 and 3 sit side by side, so that one runs straight across at head
+     height and points into its neighbour. Node 5 sits a row below node 4, so that one leaves
+     the bottom edge and turns down over the lane it is heading for. */
+  .xray-node.connect-across > .xray-conn {
+    width: 3rem; height: 0; border-left: 0; border-top: 2px dashed var(--accent);
+    transform: none;
   }
-  .xray-node.wire-out::after { left: 100%; }
-  .xray-node.wire-in::after  { right: 100%; }
-  .xray-node.has-wire::before {
-    content: ""; position: absolute; top: calc(1.6rem - 4px);
-    border: 5px solid transparent;
+  .xray-node.lane-site.connect-across > .xray-conn { top: 2.4rem; left: 100%; right: auto; }
+  .xray-node.lane-site.connect-across > .xray-conn::after {
+    top: 50%; bottom: auto; left: auto; right: -1px;
+    transform: translateY(-50%);
+    border-top-color: transparent; border-left-color: var(--accent);
   }
-  .xray-node.wire-out::before { left: calc(100% + 3rem - 5px); border-left-color: var(--accent); }
-  .xray-node.wire-in::before  { right: calc(100% + 3rem - 5px); border-right-color: var(--accent); }
+
+  .xray-node.lane-auth.connect-across > .xray-conn {
+    top: auto; bottom: -.9rem; right: 100%; left: auto;
+  }
+  .xray-node.lane-auth.connect-across > .xray-conn::after {
+    top: -3px; bottom: auto; left: -2px; right: auto; transform: none;
+    border-top-color: var(--accent);
+  }
 }
 
 /* ---------- record card ---------- */

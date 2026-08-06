@@ -32,13 +32,19 @@ const tick = (on) => on
   ? `<span class="xray-tick is-on" aria-hidden="true">✓</span>`
   : `<span class="xray-tick" aria-hidden="true">✗</span>`;
 
-function node({ n, lane, wire, title, rowsHtml = "", caption = "", note = "", raw = "" }) {
+const node = (d) => d;   // builders describe nodes; renderNode draws them
+
+// Each node draws the connector to the one after it, so the five read as a single path
+// instead of five loose cards: straight down when the next node is in the same lane, across
+// the gutter when it changes hands.
+function renderNode({ n, lane, wire, title, rowsHtml = "", caption = "", note = "", raw = "" }, next) {
   const wireTag = wire === "out"
     ? `<span class="xray-wire">crossed the wire <span aria-hidden="true">→</span></span>`
     : wire === "in"
       ? `<span class="xray-wire"><span aria-hidden="true">←</span> crossed the wire</span>`
       : "";
-  return `<article class="xray-node lane-${lane}${wire ? " has-wire wire-" + wire : ""}">
+  const connect = !next ? "" : next.lane === lane ? " has-next connect-down" : " has-next connect-across";
+  return `<article class="xray-node lane-${lane}${wire ? " has-wire wire-" + wire : ""}${connect}">
     <p class="xray-n"><span class="xray-num">${n}</span>
       <span class="xray-lane-label">${lane === LANE_SITE ? "This site" : "Your authenticator"}</span>
       ${wireTag}</p>
@@ -47,6 +53,7 @@ function node({ n, lane, wire, title, rowsHtml = "", caption = "", note = "", ra
     ${caption ? `<p class="xray-caption">${caption}</p>` : ""}
     ${note ? `<p class="xray-note">${note}</p>` : ""}
     ${raw ? `<details class="xray-raw"><summary>expand raw</summary><div class="xray-rawbody">${raw}</div></details>` : ""}
+    ${next ? `<span class="xray-conn" aria-hidden="true"></span>` : ""}
   </article>`;
 }
 
@@ -260,7 +267,7 @@ export function xrayHtml(kind, res, { open = false, recordLink = false } = {}) {
         <p class="xray-lane-head lane-site">This site</p>
         <p class="xray-lane-head lane-auth">Your authenticator</p>
       </div>
-      <div class="xray-nodes">${nodes.join("")}</div>
+      <div class="xray-nodes">${nodes.map((d, i) => renderNode(d, nodes[i + 1])).join("")}</div>
     </div>
   </details>`;
 }

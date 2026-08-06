@@ -163,3 +163,43 @@ test("the X-ray body announces itself politely", async ({ page }) => {
   await expect(page.locator("#rail-out .xray-body")).toHaveAttribute("aria-live", "polite");
   await expect(page.locator("#rail-out .xray-body .sr-only")).toContainText("Registration ceremony X-ray");
 });
+
+test("the five nodes are joined into one path, not five loose cards", async ({ page }) => {
+  await page.setViewportSize({ width: 1500, height: 1100 });
+  await railTo2(page);
+
+  const shape = await page.locator("#rail-out .xray-node").evaluateAll((els) =>
+    els.map((e) => ({
+      n: e.querySelector(".xray-num").textContent,
+      down: e.classList.contains("connect-down"),
+      across: e.classList.contains("connect-across"),
+      hasConn: !!e.querySelector(".xray-conn"),
+    })));
+
+  // 1→2 same lane, 2→3 crosses, 3→4 same lane, 4→5 crosses, 5 ends
+  expect(shape).toEqual([
+    { n: "1", down: true, across: false, hasConn: true },
+    { n: "2", down: false, across: true, hasConn: true },
+    { n: "3", down: true, across: false, hasConn: true },
+    { n: "4", down: false, across: true, hasConn: true },
+    { n: "5", down: false, across: false, hasConn: false },
+  ]);
+
+  // every connector is actually drawn, and none is decorative-only markup
+  const drawn = await page.locator("#rail-out .xray-conn").evaluateAll((els) =>
+    els.map((e) => { const r = e.getBoundingClientRect(); return r.width > 0 || r.height > 0; }));
+  expect(drawn).toEqual([true, true, true, true]);
+
+  // connectors are hidden from assistive tech — the DOM order already carries the sequence
+  const hidden = await page.locator("#rail-out .xray-conn").evaluateAll(
+    (els) => els.every((e) => e.getAttribute("aria-hidden") === "true"));
+  expect(hidden).toBe(true);
+});
+
+test("stacked below 1024px, every connector runs straight down", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 1100 });
+  await railTo2(page);
+  const vertical = await page.locator("#rail-out .xray-conn").evaluateAll((els) =>
+    els.every((e) => { const r = e.getBoundingClientRect(); return r.height > r.width; }));
+  expect(vertical).toBe(true);
+});

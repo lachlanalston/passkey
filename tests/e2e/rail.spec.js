@@ -225,3 +225,29 @@ test("rail errors are translated, never raw DOMException names", async ({ page }
   await expect(page.locator("#rail-out")).toContainText("You cancelled, or it timed out. No harm done — go again.", { timeout: 20000 });
   await expect(page.locator("#rail-out")).not.toContainText("NotAllowedError");
 });
+
+test("step 4 explains the checkbox before you need it, and lays it out on one line", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("passkey-lab-training", JSON.stringify({
+    step: 4, completed: [1, 2, 3], step1CredId: "x", step3CredId: "y", startedAt: "t",
+  })));
+  await page.reload();
+
+  await expect(page.locator(".rail-check-note")).toHaveText(
+    "Running it and watching it fail, then fixing it, completes this step on its own. No phone to hand, or already seen it? Tick the box below instead.");
+
+  // the box sits beside its label, not stacked above it
+  const box = await page.locator("#rail-check").boundingBox();
+  const label = await page.locator(".rail-check span").boundingBox();
+  expect(box.x).toBeLessThan(label.x);
+  expect(Math.abs((box.y + box.height / 2) - (label.y + label.height / 2))).toBeLessThan(8);
+});
+
+test("the walkthrough variant gets its own checkbox explanation", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("passkey-lab-training", JSON.stringify({
+    step: 4, completed: [1, 2], step1CredId: "x", step3Skipped: true, startedAt: "t",
+  })));
+  await page.reload();
+  await expect(page.locator(".rail-check-note")).toHaveText(
+    "Tick the box when you've read it — that completes the step.");
+  await expect(page.locator(".rail-check")).toContainText("I read the failure walkthrough");
+});
