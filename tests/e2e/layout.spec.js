@@ -65,6 +65,14 @@ for (const size of SIZES) {
 
 test("the whole bench fits on a 1920x1080 screen without scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
+
+  // Measure the machine this is actually presented from: a laptop with a working built-in
+  // authenticator, so no capability notice is raised. Headless Chromium reports no platform
+  // authenticator and would raise one, which costs ~60px of height that a presenter never pays.
+  await page.addInitScript(() => {
+    window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = async () => true;
+    window.PublicKeyCredential.isConditionalMediationAvailable = async () => true;
+  });
   await page.goto("/index.html");
 
   // The requirement: every bench panel is on screen at once.

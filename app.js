@@ -18,7 +18,7 @@ import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "
 import { renderTraining } from "./training.js";
 import {
   section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
-  openRecordCard, cleanupListHtml,
+  openRecordCard, cleanupListHtml, translateError, isFirefoxOnLinux,
 } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 
@@ -60,6 +60,8 @@ let lastAssertion = null; // populated on each successful sign-in, for the inspe
 let lastCeremony = null;  // { kind, res } — whichever ran most recently, for the X-ray
 
 // ---------- environment ----------
+// The gauges say what is and isn't available; the notices say what to do about it, next to
+// the control it affects.
 async function detectEnv() {
   $("origin").textContent = location.origin;
   $("rpid").textContent = location.hostname || "(none — serve over http/https)";
@@ -67,16 +69,48 @@ async function detectEnv() {
   const supported = !!(window.PublicKeyCredential && navigator.credentials);
   $("webauthn").textContent = supported ? "Yes" : "No";
 
+  let platform = null, condui = null;
   if (supported && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-    try { $("platform").textContent = (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) ? "Available" : "Not available"; }
-    catch { $("platform").textContent = "Unknown"; }
-  } else $("platform").textContent = "Unknown";
+    try { platform = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { platform = null; }
+  }
+  $("platform").textContent = platform === null ? "Unknown" : platform ? "Available" : "Not available";
 
   if (supported && PublicKeyCredential.isConditionalMediationAvailable) {
-    try { $("condui").textContent = (await PublicKeyCredential.isConditionalMediationAvailable()) ? "Available" : "Not available"; }
-    catch { $("condui").textContent = "Unknown"; }
-  } else $("condui").textContent = "Unknown";
+    try { condui = await PublicKeyCredential.isConditionalMediationAvailable(); } catch { condui = null; }
+  }
+  $("condui").textContent = condui === null ? "Unknown" : condui ? "Available" : "Not available";
+
+  renderNotices({ supported, platform, condui });
 }
+
+const noticeHtml = (text, tone = "warn") =>
+  `<p class="notice notice-${tone}">${esc(text)}</p>`;
+
+function renderNotices({ supported, platform, condui }) {
+  const reg = [], auth = [];
+
+  if (!supported) {
+    reg.push(noticeHtml("This browser doesn't support passkeys. Chrome, Edge or Safari will.", "bad"));
+    auth.push(noticeHtml("This browser doesn't support passkeys. Chrome, Edge or Safari will.", "bad"));
+  } else {
+    if (platform === false) {
+      reg.push(noticeHtml("No built-in authenticator here — you'll be offered a phone or security key instead."));
+    }
+    if (isFirefoxOnLinux()) {
+      reg.push(noticeHtml("Firefox on Linux can't do the phone/QR flow — a Firefox gap, not you. Chrome or Edge can."));
+    }
+    if (condui === false) {
+      $("btn-autofill").disabled = true;
+      auth.push(noticeHtml("Autofill sign-in needs conditional mediation, which this browser doesn't offer — use “Sign in with passkey” instead."));
+    }
+  }
+
+  $("notice-reg").innerHTML = reg.join("");
+  $("notice-auth").innerHTML = auth.join("");
+}
+
+// On the bench the raw name is part of what is being taught, so it rides along in brackets.
+const benchError = (err) => `${translateError(err)} (${err.name})`;
 
 // ---------- registration (bench wrapper over registerPasskey) ----------
 async function createPasskey() {
@@ -115,10 +149,10 @@ async function createPasskey() {
   } catch (err) {
     if (err.name === "InvalidStateError") {
       log("WARNING — this authenticator already holds a passkey for this account (excludeCredentials blocked a duplicate).");
-      explain("The authenticator already has a passkey for this account, so registration was blocked. This is the 'no duplicate on the same device' rule.", "warn");
+      explain(benchError(err), "warn");
     } else {
       log("ERROR — registration failed: " + err.name + " — " + err.message);
-      explain("Registration was cancelled or failed: " + err.message, "bad");
+      explain(benchError(err), "bad");
     }
   }
 }
@@ -173,7 +207,7 @@ async function authenticate(mediation = "optional") {
       explain("The ceremony completed, but there was no stored public key to check the signature against (this passkey wasn't created here).", "warn");
   } catch (err) {
     log("ERROR — authentication failed: " + err.name + " — " + err.message);
-    explain("Sign-in was cancelled or failed: " + err.message, "warn");
+    explain(benchError(err), "warn");
   }
 }
 
@@ -251,7 +285,7 @@ async function tamperTest() {
     });
   } catch (err) {
     log("ERROR — tamper test aborted: " + err.name + " — " + err.message);
-    explain("Tamper test cancelled: " + err.message, "warn");
+    explain("Tamper test stopped. " + benchError(err), "warn");
   }
 }
 
@@ -261,7 +295,7 @@ async function replayTest() {
   log("Replay test — capturing one genuine sign-in, then resending it against a fresh challenge.");
   let r;
   try { r = await getAssertion(c1, $("userverification").value); }
-  catch (err) { log("ERROR — replay test aborted: " + err.name + " — " + err.message); explain("Replay test cancelled: " + err.message, "warn"); return; }
+  catch (err) { log("ERROR — replay test aborted: " + err.name + " — " + err.message); explain("Replay test stopped. " + benchError(err), "warn"); return; }
   if (r.none) { proveNeedPasskey(); return; }
 
   const resp = r.assertion.response;
@@ -293,15 +327,21 @@ async function wrongKeyTest() {
   log("Wrong-key test — verifying one real signature against the correct key, then a different key.");
   let r;
   try { r = await getAssertion(chal, $("userverification").value); }
-  catch (err) { log("ERROR — wrong-key test aborted: " + err.name + " — " + err.message); explain("Wrong-key test cancelled: " + err.message, "warn"); return; }
+  catch (err) { log("ERROR — wrong-key test aborted: " + err.name + " — " + err.message); explain("Wrong-key test stopped. " + benchError(err), "warn"); return; }
   if (r.none) { proveNeedPasskey(); return; }
 
   const resp = r.assertion.response;
   const record = r.all.find((c) => c.id === r.assertion.id);
   const right = await verifyAssertion(record, resp, false);
-  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  // Compare like for like: an RS256 credential deserves an RSA foil, not an EC one, or the
+  // "wrong key" is really just "wrong algorithm".
+  const alg = record?.publicKeyAlgorithm === -257 ? -257 : -7;
+  const params = alg === -257
+    ? { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }
+    : { name: "ECDSA", namedCurve: "P-256" };
+  const kp = await crypto.subtle.generateKey(params, true, ["sign", "verify"]);
   const otherSpki = b64urlEncode(await crypto.subtle.exportKey("spki", kp.publicKey));
-  const wrong = await verifyAssertion({ publicKey: otherSpki, publicKeyAlgorithm: -7 }, resp, false);
+  const wrong = await verifyAssertion({ publicKey: otherSpki, publicKeyAlgorithm: alg }, resp, false);
 
   log("Wrong-key test result", { withCorrectKey: right.ok, withDifferentKey: wrong.ok });
   renderProve({
@@ -312,6 +352,7 @@ async function wrongKeyTest() {
       { k: "Against the stored public key", v: right.ok === true ? "VALID" : "did not verify", mark: right.ok === true ? "ok" : "bad" },
       { k: "Against a different public key", v: wrong.ok === true ? "valid (!)" : "INVALID — verification fails", mark: wrong.ok === true ? "bad" : "ok" },
       { k: "Checked with", v: esc(right.reason) },
+      { k: "The other key", v: `a fresh ${esc(algName(alg))} key — same algorithm, different pair` },
     ],
     cause: `The blocker is identity: a signature only verifies against the one public key whose private half produced it. Swap in any other key and the check fails. The public key isn't secret — a server stores it, anyone can hold it — yet it still can't be used to forge a login, because forging needs the <b>private</b> key, which never leaves the authenticator.`,
   });
@@ -324,7 +365,7 @@ async function uvTest() {
   log(`User-verification test — signing in with userVerification="${requested}", then applying a "UV required" server policy.`);
   let r;
   try { r = await getAssertion(chal, requested); }
-  catch (err) { log("ERROR — UV test aborted: " + err.name + " — " + err.message); explain("UV test cancelled: " + err.message, "warn"); return; }
+  catch (err) { log("ERROR — UV test aborted: " + err.name + " — " + err.message); explain("UV test stopped. " + benchError(err), "warn"); return; }
   if (r.none) { proveNeedPasskey(); return; }
 
   const flags = parseAuthData(new Uint8Array(r.assertion.response.authenticatorData));

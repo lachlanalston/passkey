@@ -220,6 +220,17 @@ select { cursor: pointer; }
   letter-spacing: .12em; color: var(--ink-3);
 }
 
+/* Capability notices: what this browser can't do, said next to the control it affects. */
+.notices:empty { display: none; }
+.notice {
+  margin: .7rem 0 0; max-width: 62ch; padding: .45rem .65rem;
+  font-size: .8rem; color: var(--ink);
+  background: var(--panel-2); border-left: 3px solid var(--warn); border-radius: 3px;
+}
+.notice-bad { border-left-color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn:disabled:hover { border-color: var(--rule); color: var(--ink); }
+
 .hint { margin: .9rem 0 0; max-width: 62ch; font-size: .82rem; color: var(--ink-2); }
 .hint strong { color: var(--ink); font-weight: 600; }
 code {
