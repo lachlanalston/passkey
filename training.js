@@ -4,7 +4,7 @@
 // ceremonies.js with fixed options — the rail never reads a bench select.
 
 import { esc, randomBytes, syncLabel } from "./core.js";
-import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
+import { registerPasskey, signIn, runPhishing, loadCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
 import { translateError, cleanupListHtml, openRecordCard, phishDiagramHtml, requestDiffHtml } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
@@ -208,6 +208,7 @@ function render() {
 
   host.innerHTML = `
     <div class="rail">
+      <h1 class="sr-only">Passkey Lab — guided lab</h1>
       ${stepper()}
       ${showFinish ? finishScreen() : `
       <section class="step rail-step" aria-labelledby="rail-headline">

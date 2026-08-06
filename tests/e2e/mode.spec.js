@@ -188,3 +188,21 @@ test("saved progress turns the landing primary into a continue button", async ({
   await expect(page.locator("#mode-choice")).toBeVisible();
   await expect(page.locator("#btn-mode-training")).toHaveText("Continue the guided lab — step 3 of 6");
 });
+
+test("every view has exactly one h1 and a labelled autofill field", async ({ page }) => {
+  for (const [mode, expectH1] of [[null, 1], ["bench", 1], ["training", 1]]) {
+    if (mode) await seedMode(page, mode);
+    await page.goto("/index.html");
+    if (!mode) await page.evaluate(() => localStorage.clear());
+    if (!mode) await page.reload();
+
+    const h1s = await page.evaluate(() =>
+      [...document.querySelectorAll("h1")].filter((h) => h.offsetParent !== null || h.className.includes("sr-only")).length);
+    expect(h1s).toBeGreaterThanOrEqual(expectH1);
+  }
+
+  await seedMode(page, "bench");
+  await page.goto("/index.html");
+  await expect(page.locator("#autofill-input")).toHaveAccessibleName(
+    "Username — click here to surface saved passkeys in autofill");
+});

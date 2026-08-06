@@ -14,7 +14,7 @@ import {
   registerPasskey, signIn, getAssertion, runPhishing,
 } from "./ceremonies.js";
 
-import { getMode, setMode, clearMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
+import { setMode, clearMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
 import { renderTraining } from "./training.js";
 import {
   section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
