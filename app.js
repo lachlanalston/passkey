@@ -576,4 +576,6 @@ window.addEventListener("DOMContentLoaded", () => {
   $("inspector").addEventListener("click", (e) => { if (e.target.id === "inspector") closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
   document.addEventListener("keydown", trapModalTab);
+  // The rail purges the ledger in Step 6; keep the bench's table in step with it.
+  document.addEventListener("passkey-lab:ledger-changed", renderTable);
 });
