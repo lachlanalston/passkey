@@ -713,9 +713,11 @@ pre#log:empty::before {
   .bench {
     gap: .75rem;
     grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr) minmax(0, 1.02fr);
+    /* Row-major, because that is how the eye actually scans a two-row grid: the numbered
+       steps have to read 01 → 02 → 03, not 01 → 03 → 02. */
     grid-template-areas:
-      "reg   prove  trace"
-      "auth  ledger trace";
+      "reg   auth   trace"
+      "prove ledger trace";
     align-items: start;
   }
   .col { display: contents; }

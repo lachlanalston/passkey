@@ -109,16 +109,40 @@ test("the trace is sticky and fills its column on a wide screen, static below 14
   expect(narrow).toBe("static");
 });
 
-test("three-column grouping puts registration+auth, prove+ledger and the trace in their own columns", async ({ page }) => {
+test("the numbered steps read 01 -> 02 -> 03 in visual order", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/index.html");
+
+  // Sort the panels the way an eye scans a grid: down the rows, then across each row.
+  const order = await page.evaluate(() =>
+    [...document.querySelectorAll(".bench .step")]
+      .map((e) => ({ label: e.querySelector(".eyebrow").innerText.replace(/\s+/g, " ").trim(),
+                     r: e.getBoundingClientRect() }))
+      .sort((a, b) => (a.r.top - b.r.top) || (a.r.left - b.r.left))
+      .map((x) => x.label));
+
+  expect(order).toEqual([
+    "01 REGISTRATION",
+    "02 AUTHENTICATION",
+    "TRACE",
+    "03 PROVE IT",
+    "LEDGER",
+  ]);
+
+  const numbered = order.filter((l) => /^\d\d /.test(l));
+  expect(numbered).toEqual(["01 REGISTRATION", "02 AUTHENTICATION", "03 PROVE IT"]);
+});
+
+test("three columns: steps left and middle, trace in its own full-height column", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/index.html");
   const left = (sel) => page.locator(sel).evaluate((el) => Math.round(el.getBoundingClientRect().left));
   const [reg, auth, prove, ledger, trace] = await Promise.all(
     [".b-reg", ".b-auth", ".b-prove", ".b-ledger", ".step-trace"].map(left));
-  expect(auth).toBe(reg);
-  expect(ledger).toBe(prove);
-  expect(prove).toBeGreaterThan(reg);
-  expect(trace).toBeGreaterThan(prove);
+  expect(prove).toBe(reg);              // column 1: registration above prove-it
+  expect(ledger).toBe(auth);            // column 2: authentication above the ledger
+  expect(auth).toBeGreaterThan(reg);
+  expect(trace).toBeGreaterThan(auth);  // column 3: the trace, alone
 });
 
 test("the gauges sit five-across under the hero domain on a wide screen", async ({ page }) => {
