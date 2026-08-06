@@ -5,7 +5,7 @@
 
 import { esc, randomBytes, syncLabel } from "./core.js";
 import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
-import { translateError, cleanupListHtml, openRecordCard, phishDiagramHtml } from "./ui.js";
+import { translateError, cleanupListHtml, openRecordCard, phishDiagramHtml, requestDiffHtml } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
 import { TWIN_URL } from "./config.js";
@@ -20,6 +20,7 @@ const blank = () => ({
   step3CredId: null,
   step3Skipped: false,
   step4Failed: false,
+  lastGoodSignIn: null,
   startedAt: new Date().toISOString(),
 });
 
@@ -429,6 +430,14 @@ async function stepSignIn() {
   try {
     const res = await signIn({ allowIds: [state.step1CredId].filter(Boolean), userVerification: "required" });
     if (res.none) { out(2, missingPasskeyCard()); return; }
+    // Kept so Step 5 can show the request that worked next to the one that didn't.
+    state.lastGoodSignIn = {
+      challenge: res.challenge,
+      rpId: res.request.rpId,
+      userVerification: res.request.userVerification,
+      ms: res.ms,
+    };
+    save();
     finishStep(2, resultCard({
       tone: res.verify.ok === false ? "bad" : "ok",
       verdict: res.verify.ok === true ? "Signed in — signature verified" : "Signed in",
@@ -530,7 +539,13 @@ async function stepPhish() {
     tone: "ok",
     verdict: "Blocked — by the browser, before any prompt",
     headline: "Nothing was offered, nothing was signed, nothing leaked.",
-    visual: phishDiagramHtml({ fakeRp: res.fakeRp, realHost: res.realHost, blocked: true, errName: res.err.name }),
+    visual: phishDiagramHtml({ fakeRp: res.fakeRp, realHost: res.realHost, blocked: true, errName: res.err.name })
+      + requestDiffHtml({
+          good: state.lastGoodSignIn || null,
+          bad: res.request,
+          ms: state.lastGoodSignIn?.ms,
+          errName: res.err.name,
+        }),
     rows: [
       { k: "Real page origin", v: esc(res.realOrigin) },
       { k: "Exact error thrown", v: esc(res.err.name + ": " + res.err.message) },

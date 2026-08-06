@@ -651,6 +651,57 @@ td.actions { white-space: nowrap; text-align: right; }
   .phish-wall { min-width: 0; flex-direction: row; gap: .6rem; }
 }
 
+/* ---------- two real requests, side by side ----------
+   Both captured from this browser. The only styling job is to make the one changed line
+   impossible to miss. */
+.reqdiff {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem;
+  margin: 0 0 .8rem;
+}
+.reqdiff.is-single { grid-template-columns: minmax(0, 1fr); }
+.reqdiff-col {
+  padding: .75rem .85rem;
+  background: var(--bg); border: 1px solid var(--rule); border-radius: 3px;
+}
+.reqdiff-good { border-left: 3px solid var(--accent); }
+.reqdiff-good .eyebrow { color: var(--accent-ink); }
+.reqdiff-bad { border-left: 3px solid var(--bad); }
+.reqdiff-bad .eyebrow { color: var(--bad); }
+.reqdiff-sub { margin: .15rem 0 .6rem; font-size: .76rem; color: var(--ink-3); }
+
+.reqdiff-body {
+  padding: .5rem .6rem; margin-bottom: .6rem;
+  background: var(--panel); border-radius: 3px;
+}
+.reqdiff-field {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem;
+  padding: .18rem .3rem; border-radius: 2px;
+  font-family: var(--mono); font-size: .76rem; line-height: 1.5;
+}
+.reqdiff-key { color: var(--ink-3); }
+.reqdiff-val { color: var(--ink); word-break: break-all; }
+.reqdiff-field.is-changed {
+  background: color-mix(in srgb, var(--bad) 18%, transparent);
+  outline: 1px solid var(--bad);
+}
+.reqdiff-field.is-changed .reqdiff-val { color: var(--bad); font-weight: 600; }
+.reqdiff-flag {
+  margin-left: auto; padding: 0 .3rem; border-radius: 2px;
+  font-size: .6rem; text-transform: uppercase; letter-spacing: .1em;
+  background: var(--bad); color: #22060A;
+}
+
+.reqdiff-out { margin: 0; font-size: .82rem; font-weight: 500; }
+.reqdiff-out.is-ok { color: var(--accent-ink); }
+.reqdiff-out.is-bad { color: var(--bad); }
+.reqdiff-note {
+  margin: 0 0 .9rem; max-width: 70ch; font-size: .88rem; color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  .reqdiff { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ---------- record card ---------- */
 .record-card { border-left-color: var(--accent); margin-top: 0; }
 .record-card h3 { margin-bottom: .8rem; }

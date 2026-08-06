@@ -196,11 +196,20 @@ export async function getAssertion(challenge, userVerification = "preferred") {
 export async function runPhishing() {
   const realHost = rpId() || "(none)";
   const fakeRp = "attacker-" + (rpId() || "example") + ".example";
-  const base = { fakeRp, realHost, realOrigin: location.origin };
+  const challenge = randomBytes(32);
+  const publicKey = { challenge, rpId: fakeRp, userVerification: "preferred", timeout: 60000 };
+  // The request is returned so the caller can show it beside a genuine one — the single
+  // changed field is the whole lesson.
+  const base = {
+    fakeRp, realHost, realOrigin: location.origin,
+    request: {
+      challenge: b64urlEncode(challenge),
+      rpId: fakeRp,
+      userVerification: publicKey.userVerification,
+    },
+  };
   try {
-    await navigator.credentials.get({
-      publicKey: { challenge: randomBytes(32), rpId: fakeRp, userVerification: "preferred", timeout: 60000 },
-    });
+    await navigator.credentials.get({ publicKey });
     return { ...base, blocked: false, err: null };
   } catch (err) {
     return { ...base, blocked: true, err };

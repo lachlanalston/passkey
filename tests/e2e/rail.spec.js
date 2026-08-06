@@ -278,3 +278,56 @@ test("step 5 draws the attempt instead of only describing it", async ({ page }) 
   await expect(viz).toHaveAttribute("role", "img");
   await expect(viz).toHaveAttribute("aria-label", /never contacted/);
 });
+
+test("step 5 puts the real Step-2 request beside the attacker's", async ({ page }) => {
+  // do steps 1 and 2 for real so there is a genuine request to compare against
+  await page.click("#rail-primary");
+  await page.click('#rail-out button[data-next="2"]');
+  await page.click("#rail-primary");
+  await expect(page.locator("#rail-out")).toContainText("Signed in — signature verified");
+
+  const good = await page.evaluate(() => JSON.parse(localStorage.getItem("passkey-lab-training")).lastGoodSignIn);
+  expect(good.rpId).toBe("localhost");
+  expect(good.userVerification).toBe("required");
+
+  await page.evaluate(() => {
+    const t = JSON.parse(localStorage.getItem("passkey-lab-training"));
+    t.step = 5; t.completed = [1, 2, 3, 4];
+    localStorage.setItem("passkey-lab-training", JSON.stringify(t));
+  });
+  await page.reload();
+  await page.click("#rail-primary");
+
+  const diff = page.locator("#rail-out .reqdiff");
+  await expect(diff).toBeVisible();
+  await expect(diff).not.toHaveClass(/is-single/);
+
+  // the genuine side carries the real captured rpId and outcome
+  const g = diff.locator(".reqdiff-good");
+  await expect(g.locator(".eyebrow")).toHaveText("The request that worked");
+  await expect(g).toContainText("rpId: localhost");
+  await expect(g.locator(".reqdiff-out")).toContainText("Signature returned");
+
+  // exactly one field is marked changed, and it is the rpId
+  const changed = diff.locator(".reqdiff-field.is-changed");
+  await expect(changed).toHaveCount(1);
+  await expect(changed).toContainText("rpId:");
+  await expect(changed).toContainText("attacker-");
+  await expect(diff.locator(".reqdiff-bad .reqdiff-out")).toContainText("SecurityError");
+
+  await expect(page.locator("#rail-out .reqdiff-note")).toContainText(
+    "One field. That is the entire difference between a login and a theft attempt");
+});
+
+test("step 5 says so honestly when there is no genuine request to compare", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("passkey-lab-training", JSON.stringify({
+    step: 5, completed: [1, 2, 3, 4], step1CredId: "x", startedAt: "t",   // no lastGoodSignIn
+  })));
+  await page.reload();
+  await page.click("#rail-primary");
+
+  await expect(page.locator("#rail-out .reqdiff")).toHaveClass(/is-single/);
+  await expect(page.locator("#rail-out .reqdiff-good")).toHaveCount(0);   // nothing invented
+  await expect(page.locator("#rail-out .reqdiff-note")).toContainText(
+    "Do Step 2 first and come back");
+});

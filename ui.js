@@ -126,6 +126,48 @@ export function phishDiagramHtml({ fakeRp, realHost, blocked, errName }) {
   </div>`;
 }
 
+// ---------- two real requests, side by side ----------
+// Both objects are captured from this browser: `good` is the request that produced a working
+// signature earlier in the lab, `bad` is the one the phishing attempt just sent. Nothing here
+// is illustrative — it is what went over the wire.
+const reqField = (k, v, changed) =>
+  `<div class="reqdiff-field${changed ? " is-changed" : ""}">
+     <span class="reqdiff-key">${esc(k)}:</span>
+     <span class="reqdiff-val">${esc(v)}</span>
+     ${changed ? `<span class="reqdiff-flag">changed</span>` : ""}
+   </div>`;
+
+const trunc = (s, n = 18) => (String(s).length > n ? String(s).slice(0, n) + "…" : String(s));
+
+export function requestDiffHtml({ good, bad, ms, errName }) {
+  const col = (cls, eyebrow, sub, fields, outcome) =>
+    `<div class="reqdiff-col ${cls}">
+       <p class="eyebrow">${esc(eyebrow)}</p>
+       <p class="reqdiff-sub">${esc(sub)}</p>
+       <div class="reqdiff-body">${fields}</div>
+       ${outcome}
+     </div>`;
+
+  const goodCol = good ? col("reqdiff-good", "The request that worked", "your Step 2 sign-in",
+    reqField("challenge", trunc(good.challenge), false) +
+    reqField("rpId", good.rpId, false) +
+    reqField("userVerification", good.userVerification, false),
+    `<p class="reqdiff-out is-ok"><span aria-hidden="true">✔</span> Signature returned${ms ? ` in ${(ms / 1000).toFixed(1)} s` : ""}</p>`) : "";
+
+  const badCol = col("reqdiff-bad", "The attacker's request", "just run, from this page",
+    reqField("challenge", trunc(bad.challenge), false) +
+    reqField("rpId", trunc(bad.rpId, 26), true) +
+    reqField("userVerification", bad.userVerification, false),
+    `<p class="reqdiff-out is-bad"><span aria-hidden="true">✘</span> ${esc(errName || "Blocked")} — nothing returned, no prompt</p>`);
+
+  return `<div class="reqdiff${good ? "" : " is-single"}">
+      ${goodCol}${badCol}
+    </div>
+    <p class="reqdiff-note">${good
+      ? "One field. That is the entire difference between a login and a theft attempt — and the browser checks it before it does anything else."
+      : "Do Step 2 first and come back, and the genuine request will sit beside this one for comparison."}</p>`;
+}
+
 // ---------- error translation ----------
 // WebAuthn's DOMException names mean nothing to an L1 tech. The rail always shows the
 // translation; the bench shows the translation plus the raw name, because on the bench the
