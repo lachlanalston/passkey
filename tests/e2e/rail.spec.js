@@ -165,8 +165,8 @@ test("step 6 completes only when the sign-in genuinely fails, and purges the led
   });
   await page.reload();
   await expect(page.locator("#rail-headline")).toHaveText("Clean up — lab passkeys are real passkeys");
-  await expect(page.locator(".cleanup-list")).toContainText("Settings → Accounts → Passkeys");
-  await expect(page.locator(".cleanup-list")).toContainText("Google Password Manager");
+  await expect(page.locator("#training-view .rail-copy .cleanup-list")).toContainText("Settings → Accounts → Passkeys");
+  await expect(page.locator("#training-view .rail-copy .cleanup-list")).toContainText("Google Password Manager");
 
   // The passkey is still in the device store, so proving it gone must fail.
   await page.click("#rail-primary");

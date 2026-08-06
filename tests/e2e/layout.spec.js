@@ -66,6 +66,13 @@ for (const size of SIZES) {
 test("the whole bench fits on a 1920x1080 screen without scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/index.html");
+
+  // The requirement: every bench panel is on screen at once.
+  const benchBottom = await page.locator(".bench").evaluate((el) => el.getBoundingClientRect().bottom);
+  expect(benchBottom).toBeLessThanOrEqual(1080);
+
+  // Stricter, and also true today: the page itself does not scroll at all. Headroom here is
+  // thin by construction — see IMPLEMENTATION-NOTES N-44.
   const vertical = await page.evaluate(() =>
     document.documentElement.scrollHeight - window.innerHeight);
   expect(vertical).toBeLessThanOrEqual(0);

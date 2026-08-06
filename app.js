@@ -18,7 +18,7 @@ import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "
 import { renderTraining } from "./training.js";
 import {
   section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
-  openRecordCard,
+  openRecordCard, cleanupListHtml,
 } from "./ui.js";
 import { xrayHtml, wireXray } from "./xray.js";
 
@@ -524,6 +524,7 @@ function wireMode() {
 window.addEventListener("DOMContentLoaded", () => {
   detectEnv();
   renderTable();
+  $("cleanup-footer-list").innerHTML = cleanupListHtml();
   wireMode();
   $("btn-create").addEventListener("click", createPasskey);
   $("btn-auth").addEventListener("click", () => authenticate("optional"));
