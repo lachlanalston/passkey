@@ -6,8 +6,7 @@
 import {
   b64urlEncode, b64urlDecode, randomBytes, esc,
   parseAuthData, syncLabel, decodeClientData, spkiToPem, verifyBytes, verifyAssertion,
-  cborDecode, toHex, inspectAuthData, flagBits, coseInfo, derRS, walletName, aaguidStr,
-  algName,
+  cborDecode, derRS, algName,
 } from "./core.js";
 
 import {
@@ -17,6 +16,8 @@ import {
 
 import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
 import { renderTraining } from "./training.js";
+import { section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab } from "./ui.js";
+import { xrayHtml } from "./xray.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -53,6 +54,7 @@ function renderProve(data) {
 }
 
 let lastAssertion = null; // populated on each successful sign-in, for the inspector
+let lastCeremony = null;  // { kind, res } — whichever ran most recently, for the X-ray
 
 // ---------- environment ----------
 async function detectEnv() {
@@ -86,6 +88,7 @@ async function createPasskey() {
       onRequest: (req) => log("navigator.credentials.create() request", req),
     });
     const { record, ms, flags, clientData: cd, echoed } = res;
+    lastCeremony = { kind: "registration", res };
     renderTable();
 
     log(`Passkey created (${ms} ms)`, {
@@ -138,6 +141,7 @@ async function authenticate(mediation = "optional") {
 
     const { record, ms, flags, clientData: cd, verify, echoed, raw } = res;
     lastAssertion = { record, authData: raw.authData, clientDataJSON: raw.clientDataJSON, signature: raw.signature, id: res.id };
+    lastCeremony = { kind: "authentication", res };
     if (record) renderTable();
 
     log((verify.ok === true ? `OK — sign-in verified (${ms} ms, signature valid)` :
@@ -409,61 +413,6 @@ function importCreds(file) {
 }
 
 // ---------- raw inspector ----------
-const section = (t, inner) => `<section class="insp-sec"><h3>${t}</h3>${inner}</section>`;
-const rows = (pairs) => `<dl class="prove-rows">` +
-  pairs.map(([k, v, m]) => `<div class="prow ${m || ""}"><dt>${k}</dt><dd>${v}</dd></div>`).join("") + `</dl>`;
-const hexPre = (u8) => `<pre class="hex">${toHex(u8)}</pre>`;
-
-let modalReturnFocus = null;
-function openModal(title, html) {
-  modalReturnFocus = document.activeElement;
-  $("insp-title").textContent = title;
-  $("insp-body").innerHTML = html;
-  $("inspector").hidden = false;
-  $("insp-close").focus();
-}
-function closeModal() {
-  if ($("inspector").hidden) return;
-  $("inspector").hidden = true;
-  $("insp-body").innerHTML = "";
-  if (modalReturnFocus && modalReturnFocus.focus) modalReturnFocus.focus();
-  modalReturnFocus = null;
-}
-// Keep Tab focus inside the open modal.
-function trapModalTab(e) {
-  if (e.key !== "Tab" || $("inspector").hidden) return;
-  const f = [...$("inspector").querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
-    .filter((el) => !el.disabled && el.offsetParent !== null);
-  if (!f.length) return;
-  const first = f[0], last = f[f.length - 1];
-  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-}
-
-function buildAuthDataSection(ad, includeCose) {
-  const p = inspectAuthData(ad);
-  const fb = flagBits(p.flags);
-  const inner = rows([
-    ["rpIdHash", hexPre(p.rpIdHash) + `<span class="insp-note">SHA-256 of the site domain</span>`],
-    ["flags byte", `<span class="mono">${fb.bin}</span>`],
-    ["flags set", fb.set],
-    ["signCount", `<span class="mono">${p.signCount}</span>`],
-  ]);
-  let out = section("authenticatorData", inner + `<p class="insp-note">Raw bytes (${ad.length}):</p>` + hexPre(ad));
-  if (includeCose && p.aaguid) {
-    const c = coseInfo(p.cose);
-    const idRows = [
-      ["AAGUID", `<span class="mono">${aaguidStr(p.aaguid)}</span> &mdash; ${esc(walletName(aaguidStr(p.aaguid)))}`, "ok"],
-      ["credentialId", hexPre(p.credId)],
-    ];
-    let keyRows = [];
-    if (c && c.x) keyRows = [["key type", esc(c.type)], ["COSE alg", `<span class="mono">${c.alg}</span> (${c.alg === -7 ? "ES256" : c.alg === -257 ? "RS256" : "?"})`], ["curve", esc(String(c.crv))], ["x coordinate", hexPre(c.x)], ["y coordinate", hexPre(c.y)]];
-    else if (c && c.n) keyRows = [["key type", esc(c.type)], ["modulus n", hexPre(c.n)], ["exponent e", hexPre(c.e)]];
-    out += section("Attested public key (COSE) &mdash; the public half stored by a server", rows(idRows) + (keyRows.length ? rows(keyRows) : ""));
-  }
-  return out;
-}
-
 function openInspectorRecord(rec) {
   const secs = [];
   secs.push(section("Credential ID", rows([["base64url", `<span class="mono">${esc(rec.id)}</span>`]]) + hexPre(b64urlDecode(rec.id))));
@@ -531,6 +480,18 @@ function openInspectorAssertion() {
   });
 }
 
+// ---------- ceremony X-ray (bench) ----------
+function openXray() {
+  if (!lastCeremony) {
+    log("X-ray — create a passkey or do a Test sign-in first, then open the X-ray.");
+    explain("Create a passkey or do a Test sign-in first, then open the X-ray.", "warn");
+    return;
+  }
+  const { kind, res } = lastCeremony;
+  openModal(kind === "registration" ? "Ceremony X-ray — registration" : "Ceremony X-ray — sign-in",
+    xrayHtml(kind, res, { open: true }));
+}
+
 // ---------- mode switching ----------
 function enterMode(mode) {
   setMode(mode);
@@ -572,6 +533,7 @@ window.addEventListener("DOMContentLoaded", () => {
   $("import-file").addEventListener("change", (e) => { if (e.target.files[0]) importCreds(e.target.files[0]); e.target.value = ""; });
   $("btn-clearlog").addEventListener("click", () => { $("log").textContent = ""; $("explain").hidden = true; });
   $("btn-inspect").addEventListener("click", openInspectorAssertion);
+  $("btn-xray").addEventListener("click", openXray);
   $("insp-close").addEventListener("click", closeModal);
   $("inspector").addEventListener("click", (e) => { if (e.target.id === "inspector") closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });

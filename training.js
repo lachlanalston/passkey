@@ -6,6 +6,7 @@
 import { esc, randomBytes, syncLabel } from "./core.js";
 import { registerPasskey, signIn, runPhishing, loadCreds, saveCreds, credsForSite, STORE_KEY } from "./ceremonies.js";
 import { translateError, cleanupListHtml } from "./ui.js";
+import { xrayHtml } from "./xray.js";
 import { TRAINING_KEY, TOTAL_STEPS, setMode, showView } from "./mode.js";
 
 const $ = (id) => document.getElementById(id);
@@ -565,5 +566,12 @@ const missingPasskeyCard = () => resultCard({
   note: `Go back to <button type="button" class="link" data-goto-inline="1">Step 1</button> and make one first.`,
 });
 
-// The X-ray itself lands in the next phase; this is where it mounts.
-function xraySlot() { return ""; }
+// The X-ray sits under every successful ceremony, open the first time each kind appears so
+// nobody has to be told to click it, folded away after that.
+const xraySeen = { registration: false, authentication: false };
+
+function xraySlot(kind, res) {
+  const open = !xraySeen[kind];
+  xraySeen[kind] = true;
+  return xrayHtml(kind, res, { open });
+}

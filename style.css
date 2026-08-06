@@ -353,6 +353,105 @@ td.actions { white-space: nowrap; text-align: right; }
   .stepper-label { display: inline; font-size: .6rem; }
 }
 
+/* ---------- ceremony X-ray ----------
+   Two lanes: what this site did on the left, what the authenticator did on the right, with
+   the crossings marked. The DOM stays in chronological order — the lanes are grid columns,
+   so the reading order down the page is the order the ceremony happened in. */
+.xray {
+  margin-top: 1.2rem;
+  background: var(--bg); border: 1px solid var(--rule); border-radius: 4px;
+}
+.xray-summary {
+  display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
+  padding: .7rem .9rem; cursor: pointer;
+}
+.xray-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.xray-summary .eyebrow { color: var(--accent-ink); }
+.xray-h { font-family: var(--display); font-size: 1rem; color: var(--ink); }
+.xray-body { padding: 0 .9rem 1rem; }
+
+.xray-badges { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; }
+.xray-badge {
+  margin: 0; padding: .4rem .7rem; flex: 1 1 18rem;
+  font-size: .8rem; color: var(--ink);
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+  border: 1px solid var(--bad); border-radius: 3px;
+}
+.xray-badge strong { color: var(--bad); }
+
+.xray-lanes { display: none; }
+.xray-nodes { display: grid; grid-template-columns: minmax(0, 1fr); gap: .7rem; }
+
+.xray-node {
+  position: relative; min-width: 0;
+  padding: .8rem .9rem;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 3px;
+}
+.xray-n {
+  display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; margin: 0 0 .35rem;
+  font-family: var(--mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink-3);
+}
+.xray-num {
+  display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; flex: none;
+  border: 1px solid var(--rule); border-radius: 50%; color: var(--accent-ink); font-size: .68rem;
+}
+.xray-wire {
+  margin-left: auto; padding: .1rem .45rem; border-radius: 2px;
+  background: var(--accent-wash); color: var(--accent-ink); letter-spacing: .06em;
+}
+.xray-title {
+  margin: 0 0 .6rem; font-family: var(--display); font-weight: 500; font-size: .98rem;
+  letter-spacing: -0.01em; color: var(--ink);
+}
+.xray-node .prove-rows { margin-bottom: .6rem; }
+.xray-caption { margin: 0; font-size: .86rem; color: var(--ink-2); }
+.xray-caption em { color: var(--ink); font-style: normal; font-weight: 600; }
+.xray-note { margin: .4rem 0 0; font-size: .8rem; color: var(--ink-3); }
+.xray-sub { color: var(--ink-3); font-size: .8em; }
+.xray-tick { font-weight: 700; color: var(--bad); }
+.xray-tick.is-on { color: var(--accent); }
+.xray-full { word-break: break-all; margin: .3rem 0 0; font-size: .74rem; color: var(--accent-ink); }
+
+.xray-more, .xray-raw { margin-top: .5rem; }
+.xray-more > summary, .xray-raw > summary {
+  cursor: pointer; font-family: var(--mono); font-size: .68rem;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--accent);
+}
+.xray-more > summary:focus-visible, .xray-raw > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.xray-rawbody { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--rule-soft); }
+.xray-rawbody .insp-sec:last-child { margin-bottom: 0; }
+
+@media (min-width: 1024px) {
+  .xray-lanes {
+    display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; margin: 0 0 .6rem;
+  }
+  .xray-lane-head {
+    margin: 0; padding-bottom: .3rem; border-bottom: 1px solid var(--rule);
+    font-family: var(--mono); font-size: .64rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--ink-3);
+  }
+  .xray-lane-head.lane-auth { text-align: right; }
+  .xray-nodes { grid-template-columns: 1fr 1fr; column-gap: 3rem; row-gap: .7rem; }
+  .xray-node.lane-site { grid-column: 1; }
+  .xray-node.lane-auth { grid-column: 2; }
+  .xray-node .xray-lane-label { display: none; }
+
+  /* the crossing: an arrow drawn into the gutter, pointing the way the bytes went */
+  .xray-node.has-wire::after {
+    content: ""; position: absolute; top: 1.6rem;
+    width: 3rem; border-top: 1px dashed var(--accent);
+  }
+  .xray-node.wire-out::after { left: 100%; }
+  .xray-node.wire-in::after  { right: 100%; }
+  .xray-node.has-wire::before {
+    content: ""; position: absolute; top: calc(1.6rem - 4px);
+    border: 5px solid transparent;
+  }
+  .xray-node.wire-out::before { left: calc(100% + 3rem - 5px); border-left-color: var(--accent); }
+  .xray-node.wire-in::before  { right: calc(100% + 3rem - 5px); border-right-color: var(--accent); }
+}
+
 /* ---------- explainer ---------- */
 .explain {
   margin: 0 0 .85rem; padding: .8rem .95rem; font-size: .92rem; line-height: 1.5;
