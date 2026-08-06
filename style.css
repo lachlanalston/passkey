@@ -54,11 +54,18 @@ body {
   padding-bottom: .85rem;
   border-bottom: 1px solid var(--rule);
 }
+/* The wordmark is a button: it goes back to the start screen from either mode. On the start
+   screen itself it is disabled, so it reads as a wordmark and nothing more. */
 .mark {
   font-family: var(--display); font-weight: 600; font-size: 1.35rem;
   letter-spacing: -0.02em; color: var(--ink);
+  padding: 0; background: none; border: 0; cursor: pointer;
+  transition: color .12s ease;
 }
 .mark span { color: var(--accent); }
+.mark:hover:not(:disabled) { color: var(--accent-ink); }
+.mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.mark:disabled { cursor: default; color: var(--ink); }
 .role { margin: 0; font-family: var(--mono); font-size: .72rem; color: var(--ink-2); }
 
 .mode-toggle { margin-left: auto; }
@@ -75,8 +82,39 @@ body {
   font-family: var(--display); font-weight: 600;
   font-size: clamp(1.9rem, 4.4vw, 2.9rem); letter-spacing: -0.02em; line-height: 1.05;
 }
-.landing-lede { margin: 0 0 1.5rem; max-width: 62ch; font-size: 1.02rem; color: var(--ink-2); }
-.landing-actions .btn { font-size: .82rem; padding: .7rem 1.2rem; }
+.landing-lede { margin: 0 0 1.8rem; max-width: 62ch; font-size: 1.02rem; color: var(--ink-2); }
+
+/* Two cards, so the choice is between two described things rather than two button labels. */
+.landing-cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;
+  align-items: stretch;
+}
+.landing-card {
+  display: flex; flex-direction: column;
+  padding: 1.1rem 1.2rem 1.2rem;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 4px;
+}
+.landing-card .eyebrow { color: var(--accent-ink); }
+.landing-meta {
+  margin: .3rem 0 .9rem; font-family: var(--mono); font-size: .72rem; color: var(--ink-3);
+}
+.landing-list { margin: 0 0 1rem; padding: 0; list-style: none; }
+.landing-list li {
+  position: relative; padding-left: 1.1rem; margin-bottom: .4rem;
+  font-size: .92rem; color: var(--ink);
+}
+.landing-list li::before {
+  content: ""; position: absolute; left: 0; top: .55em;
+  width: .38rem; height: .38rem; border-radius: 50%; background: var(--accent);
+}
+.landing-note {
+  margin: 0 0 1.2rem; max-width: 46ch; font-size: .82rem; color: var(--ink-2);
+}
+.landing-card .btn { margin-top: auto; align-self: flex-start; font-size: .82rem; padding: .7rem 1.2rem; }
+
+@media (max-width: 760px) {
+  .landing-cards { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* ---------- signature readout ---------- */
 .readout {

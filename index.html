@@ -14,7 +14,7 @@
 <body>
   <div class="frame">
     <header class="masthead">
-      <div class="mark">Passkey<span>Lab</span></div>
+      <button type="button" id="btn-home" class="mark" title="Back to the start screen">Passkey<span>Lab</span></button>
       <p class="role">WebAuthn testing bench · runs locally · no server, nothing leaves the browser</p>
       <button id="btn-mode" class="btn btn-quiet mode-toggle" hidden></button>
     </header>
@@ -23,9 +23,36 @@
     <section id="mode-choice" class="step landing" hidden aria-labelledby="landing-title">
       <h1 id="landing-title" class="landing-title">Passkey Lab</h1>
       <p class="landing-lede">See how passkeys actually work — by making one, using one, and watching what happens underneath. Nothing leaves this browser.</p>
-      <div class="actions-row landing-actions">
-        <button id="btn-mode-training" class="btn btn-primary">Guided lab — make one and see inside</button>
-        <button id="btn-mode-bench" class="btn">Open the bench — free-form testing</button>
+
+      <div class="landing-cards">
+        <article class="landing-card">
+          <p class="eyebrow">Guided lab</p>
+          <p class="landing-meta">Six steps · about 10 minutes</p>
+          <ul class="landing-list">
+            <li>Make a real passkey</li>
+            <li>Sign in with it, timed against a texted code</li>
+            <li>Do it again from your phone, over QR</li>
+            <li>Break it on purpose, so you know the failure</li>
+            <li>Try to phish yourself, and watch it get nothing</li>
+            <li>Clean up, and prove it's gone</li>
+          </ul>
+          <p class="landing-note">Every step ends with an X-ray of what actually happened — and where the same thing shows up in Microsoft Entra.</p>
+          <button id="btn-mode-training" class="btn btn-primary">Guided lab — make one and see inside</button>
+        </article>
+
+        <article class="landing-card">
+          <p class="eyebrow">The bench</p>
+          <p class="landing-meta">Free-form · nothing locked</p>
+          <ul class="landing-list">
+            <li>Every WebAuthn option exposed</li>
+            <li>A live trace of each ceremony</li>
+            <li>Raw inspector — hex, COSE, edit and re-verify</li>
+            <li>Five demos of why passkeys hold</li>
+            <li>A ledger you can export and import</li>
+          </ul>
+          <p class="landing-note">Nothing is in order and nothing is gated. Start wherever you like.</p>
+          <button id="btn-mode-bench" class="btn">Open the bench — free-form testing</button>
+        </article>
       </div>
     </section>
 

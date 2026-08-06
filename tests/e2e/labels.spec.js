@@ -40,7 +40,7 @@ test("every tooltip is a keyboard-reachable disclosure carrying the Microsoft ma
     await tip.locator("summary").click();
     await expect(tip).toHaveAttribute("open", "");
     await expect(tip.locator(".tip-body")).toBeVisible();
-    await page.locator("h1, .mark").first().click();
+    await page.locator(".masthead .role").click();   // anywhere inert closes it
     await expect(tip).not.toHaveAttribute("open", "");
   }
 });

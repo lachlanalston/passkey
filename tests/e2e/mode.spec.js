@@ -18,6 +18,37 @@ test("first visit asks which way in, and shows neither bench nor rail", async ({
   await expect(page.locator("#btn-mode-bench")).toHaveText("Open the bench — free-form testing");
 });
 
+test("each path is described, not just labelled", async ({ page }) => {
+  await gotoFirstVisit(page);
+  const cards = page.locator(".landing-card");
+  await expect(cards).toHaveCount(2);
+
+  const guided = cards.nth(0);
+  await expect(guided.locator(".eyebrow")).toHaveText("Guided lab");
+  await expect(guided.locator(".landing-meta")).toHaveText("Six steps · about 10 minutes");
+  await expect(guided.locator(".landing-list li")).toHaveCount(6);
+  await expect(guided.locator(".landing-list li").first()).toHaveText("Make a real passkey");
+  await expect(guided.locator(".landing-list li").last()).toHaveText("Clean up, and prove it's gone");
+  await expect(guided.locator(".landing-note")).toContainText("Microsoft Entra");
+  await expect(guided.locator("#btn-mode-training")).toBeVisible();
+
+  const bench = cards.nth(1);
+  await expect(bench.locator(".eyebrow")).toHaveText("The bench");
+  await expect(bench.locator(".landing-meta")).toHaveText("Free-form · nothing locked");
+  await expect(bench.locator(".landing-list li")).toHaveCount(5);
+  await expect(bench.locator("#btn-mode-bench")).toBeVisible();
+});
+
+test("the landing fills the screen instead of trailing off", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await gotoFirstVisit(page);
+  const bottom = await page.locator("#cleanup-footer").evaluate((el) => el.getBoundingClientRect().bottom);
+  expect(bottom).toBeGreaterThan(600);   // was ~360 when it was two bare buttons
+  const overflow = await page.evaluate(() =>
+    document.documentElement.scrollHeight - window.innerHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test("choosing the bench persists across a reload", async ({ page }) => {
   await gotoFirstVisit(page);
   await page.click("#btn-mode-bench");
@@ -55,6 +86,55 @@ test("the masthead toggle switches both ways and persists", async ({ page }) => 
   await expect(page.locator("#bench-view")).toBeVisible();
   await expect(page.locator("#btn-mode")).toHaveText("Switch to guided lab");
   expect(await page.evaluate(() => localStorage.getItem("passkey-lab-mode"))).toBe("bench");
+});
+
+test("the wordmark goes back to the start screen from the bench", async ({ page }) => {
+  await seedMode(page, "bench");
+  await page.goto("/index.html");
+  await expect(page.locator("#bench-view")).toBeVisible();
+  await expect(page.locator("#btn-home")).toBeEnabled();
+
+  await page.click("#btn-home");
+  await expect(page.locator("#mode-choice")).toBeVisible();
+  await expect(page.locator("#bench-view")).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("passkey-lab-mode"))).toBeNull();
+});
+
+test("the wordmark goes back to the start screen from the guided lab", async ({ page }) => {
+  await seedMode(page, "training");
+  await page.goto("/index.html");
+  await expect(page.locator("#training-view")).toBeVisible();
+
+  await page.click("#btn-home");
+  await expect(page.locator("#mode-choice")).toBeVisible();
+  await expect(page.locator("#training-view")).toBeHidden();
+});
+
+test("the wordmark is inert on the start screen itself", async ({ page }) => {
+  await gotoFirstVisit(page);
+  await expect(page.locator("#btn-home")).toBeDisabled();
+  await expect(page.locator("#btn-home")).toHaveAccessibleName("Passkey Lab");
+
+  await page.click("#btn-mode-bench");
+  await expect(page.locator("#btn-home")).toBeEnabled();
+  await expect(page.locator("#btn-home")).toHaveAccessibleName("Passkey Lab — back to the start screen");
+});
+
+test("going home keeps your place in the guided lab", async ({ page }) => {
+  await page.goto("/index.html");
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("passkey-lab-mode", "training");
+    localStorage.setItem("passkey-lab-training", JSON.stringify({ step: 4, completed: [1, 2, 3], startedAt: "t" }));
+  });
+  await page.reload();
+
+  await page.click("#btn-home");
+  await expect(page.locator("#mode-choice")).toBeVisible();
+  await expect(page.locator("#btn-mode-training")).toHaveText("Continue the guided lab — step 4 of 6");
+
+  await page.click("#btn-mode-training");
+  await expect(page.locator("#rail-headline")).toHaveText("Break it — so you recognise the failure");
 });
 
 test("saved progress turns the landing primary into a continue button", async ({ page }) => {

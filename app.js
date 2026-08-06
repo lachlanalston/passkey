@@ -14,7 +14,7 @@ import {
   registerPasskey, signIn, getAssertion, runPhishing,
 } from "./ceremonies.js";
 
-import { getMode, setMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
+import { getMode, setMode, clearMode, showView, refreshLandingPrimary, initialView } from "./mode.js";
 import { renderTraining } from "./training.js";
 import {
   section, rows, hexPre, buildAuthDataSection, openModal, closeModal, trapModalTab,
@@ -545,8 +545,17 @@ function enterMode(mode) {
   window.scrollTo(0, 0);
 }
 
+// The wordmark goes home to the start screen, from either mode.
+function goHome() {
+  clearMode();
+  refreshLandingPrimary();
+  showView("choice");
+  window.scrollTo(0, 0);
+}
+
 function wireMode() {
   refreshLandingPrimary();
+  $("btn-home").addEventListener("click", goHome);
   $("btn-mode-training").addEventListener("click", () => enterMode("training"));
   $("btn-mode-bench").addEventListener("click", () => enterMode("bench"));
   $("btn-mode").addEventListener("click", () => enterMode(getMode() === "training" ? "bench" : "training"));

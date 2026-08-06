@@ -8,6 +8,9 @@ export const TOTAL_STEPS = 6;
 
 export const getMode = () => localStorage.getItem(MODE_KEY);
 export const setMode = (m) => localStorage.setItem(MODE_KEY, m);
+// Forgetting the choice is how the start screen comes back — training progress is untouched,
+// so "Continue the guided lab — step N of 6" still knows where you were.
+export const clearMode = () => localStorage.removeItem(MODE_KEY);
 
 export function getTraining() {
   try { return JSON.parse(localStorage.getItem(TRAINING_KEY) || "null"); } catch { return null; }
@@ -31,6 +34,14 @@ export function showView(view) {
   toggle.hidden = view === "choice";
   if (view === "bench") toggle.textContent = "Switch to guided lab";
   if (view === "training") toggle.textContent = "Switch to bench";
+
+  // The wordmark is the way home. On the start screen there is nowhere to go, so it stops
+  // behaving like a control.
+  const home = $("btn-home");
+  if (home) {
+    home.disabled = view === "choice";
+    home.setAttribute("aria-label", view === "choice" ? "Passkey Lab" : "Passkey Lab — back to the start screen");
+  }
 }
 
 // The landing's primary button picks up where the lab was left off.
