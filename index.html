@@ -30,6 +30,8 @@
     </section>
 
     <div id="bench-view" hidden>
+    <p class="masthead-note">New here? The <button type="button" id="btn-tolab" class="link">guided lab</button> shows you around — and shows you underneath.</p>
+
     <!-- Signature: the relying-party readout. A passkey binds to this domain. -->
     <section class="readout" aria-labelledby="readout-title">
       <div class="readout-lead">
@@ -63,28 +65,44 @@
             <label>Display name
               <input id="displayname" type="text" value="Demo User" />
             </label>
-            <label>Authenticator
+            <label>
+              <span class="label-row">Authenticator<details class="tip">
+                <summary title="Shown as &quot;iPhone, iPad or Android device&quot; or &quot;Security key&quot; on Microsoft sign-ins."><span class="sr-only">What “Authenticator” means</span><span aria-hidden="true">?</span></summary>
+                <span class="tip-body">Shown as “iPhone, iPad or Android device” or “Security key” on Microsoft sign-ins.</span>
+              </details></span>
               <select id="attachment">
                 <option value="">Any — browser or wallet chooses</option>
-                <option value="platform">This device (Face / Touch / Hello)</option>
-                <option value="cross-platform">Cross-platform (LastPass, key, phone)</option>
+                <option value="platform">This device (Windows Hello / Touch ID)</option>
+                <option value="cross-platform">Phone or security key (LastPass, YubiKey…)</option>
               </select>
             </label>
-            <label>Discoverable (resident key)
+            <label>
+              <span class="label-row">Findable by the site (discoverable)<details class="tip">
+                <summary title="Lets you sign in with no username typed. Microsoft passkeys work this way."><span class="sr-only">What “Findable by the site” means</span><span aria-hidden="true">?</span></summary>
+                <span class="tip-body">Lets you sign in with no username typed. Microsoft passkeys work this way.</span>
+              </details></span>
               <select id="residentkey">
                 <option value="required" selected>Required — true passkey</option>
                 <option value="preferred">Preferred</option>
                 <option value="discouraged">Discouraged — server-side</option>
               </select>
             </label>
-            <label>User verification
+            <label>
+              <span class="label-row">User verification<details class="tip">
+                <summary title="Proves who is holding the device, not just that someone touched it. Microsoft requires this."><span class="sr-only">What “User verification” means</span><span aria-hidden="true">?</span></summary>
+                <span class="tip-body">Proves who is holding the device, not just that someone touched it. Microsoft requires this.</span>
+              </details></span>
               <select id="userverification">
                 <option value="preferred" selected>Preferred</option>
                 <option value="required">Required — PIN / biometric</option>
                 <option value="discouraged">Discouraged</option>
               </select>
             </label>
-            <label>Attestation
+            <label>
+              <span class="label-row">Attestation<details class="tip">
+                <summary title="Enterprise policy feature — organisations can allow only approved authenticator models. Synced passkeys can't do this."><span class="sr-only">What “Attestation” means</span><span aria-hidden="true">?</span></summary>
+                <span class="tip-body">Enterprise policy feature — organisations can allow only approved authenticator models. Synced passkeys can’t do this.</span>
+              </details></span>
               <select id="attestation">
                 <option value="none" selected>None</option>
                 <option value="indirect">Indirect</option>

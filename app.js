@@ -509,6 +509,11 @@ function wireMode() {
   $("btn-mode-training").addEventListener("click", () => enterMode("training"));
   $("btn-mode-bench").addEventListener("click", () => enterMode("bench"));
   $("btn-mode").addEventListener("click", () => enterMode(getMode() === "training" ? "bench" : "training"));
+  $("btn-tolab").addEventListener("click", () => enterMode("training"));
+  // One tooltip open at a time — they overlap the fields beneath them.
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll("details.tip[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
+  });
 
   const view = initialView();
   showView(view);
