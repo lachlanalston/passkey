@@ -1,5 +1,5 @@
-// Mode selection — the choice on first visit, that it sticks, and that the masthead
-// toggle goes both ways.
+// Mode selection — the choice on first visit, that it sticks, and that the masthead nav
+// reaches all three sections from any of them.
 
 import { test, expect } from "@playwright/test";
 import { gotoFirstVisit, seedMode } from "./helpers.js";
@@ -9,7 +9,6 @@ test("first visit asks which way in, and shows neither bench nor rail", async ({
   await expect(page.locator("#mode-choice")).toBeVisible();
   await expect(page.locator("#bench-view")).toBeHidden();
   await expect(page.locator("#training-view")).toBeHidden();
-  await expect(page.locator("#btn-mode")).toBeHidden();
 
   await expect(page.locator("#landing-title")).toHaveText("Passkey Lab");
   await expect(page.locator(".landing-lede")).toHaveText(
@@ -72,20 +71,62 @@ test("choosing the guided lab persists across a reload", async ({ page }) => {
   await expect(page.locator("#bench-view")).toBeHidden();
 });
 
-test("the masthead toggle switches both ways and persists", async ({ page }) => {
+const nav = (page, view) => page.locator(`#modenav .modenav-btn[data-view="${view}"]`);
+
+test("the masthead nav reaches all three sections from any of them", async ({ page }) => {
   await seedMode(page, "bench");
   await page.goto("/index.html");
-  await expect(page.locator("#btn-mode")).toHaveText("Switch to guided lab");
+  await expect(nav(page, "choice")).toHaveText("Home");
+  await expect(nav(page, "training")).toHaveText("Guided lab");
+  await expect(nav(page, "bench")).toHaveText("Bench");
 
-  await page.click("#btn-mode");
+  // bench -> guided lab
+  await nav(page, "training").click();
   await expect(page.locator("#training-view")).toBeVisible();
-  await expect(page.locator("#btn-mode")).toHaveText("Switch to bench");
   expect(await page.evaluate(() => localStorage.getItem("passkey-lab-mode"))).toBe("training");
 
-  await page.click("#btn-mode");
+  // guided lab -> home
+  await nav(page, "choice").click();
+  await expect(page.locator("#mode-choice")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("passkey-lab-mode"))).toBeNull();
+
+  // home -> bench
+  await nav(page, "bench").click();
   await expect(page.locator("#bench-view")).toBeVisible();
-  await expect(page.locator("#btn-mode")).toHaveText("Switch to guided lab");
   expect(await page.evaluate(() => localStorage.getItem("passkey-lab-mode"))).toBe("bench");
+
+  // bench -> home, and straight back to the guided lab
+  await nav(page, "choice").click();
+  await expect(page.locator("#mode-choice")).toBeVisible();
+  await nav(page, "training").click();
+  await expect(page.locator("#training-view")).toBeVisible();
+});
+
+test("the nav marks where you are, and that item is inert", async ({ page }) => {
+  await gotoFirstVisit(page);
+  for (const [view, others] of [
+    ["choice", ["training", "bench"]],
+    ["training", ["choice", "bench"]],
+    ["bench", ["choice", "training"]],
+  ]) {
+    if (view !== "choice") await nav(page, view).click();
+    await expect(nav(page, view)).toHaveAttribute("aria-current", "page");
+    await expect(nav(page, view)).toBeDisabled();
+    for (const o of others) {
+      await expect(nav(page, o)).not.toHaveAttribute("aria-current", "page");
+      await expect(nav(page, o)).toBeEnabled();
+    }
+    if (view !== "choice") await nav(page, "choice").click();
+  }
+});
+
+test("the nav survives a reload on the section you left off in", async ({ page }) => {
+  await seedMode(page, "training");
+  await page.goto("/index.html");
+  await expect(nav(page, "training")).toHaveAttribute("aria-current", "page");
+  await page.reload();
+  await expect(nav(page, "training")).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("#training-view")).toBeVisible();
 });
 
 test("the wordmark goes back to the start screen from the bench", async ({ page }) => {

@@ -68,7 +68,22 @@ body {
 .mark:disabled { cursor: default; color: var(--ink); }
 .role { margin: 0; font-family: var(--mono); font-size: .72rem; color: var(--ink-2); }
 
-.mode-toggle { margin-left: auto; }
+/* Section nav: all three are always one click away, and the one you are on is marked. */
+.modenav {
+  display: flex; margin-left: auto; gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden;
+}
+.modenav-btn {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .04em;
+  color: var(--ink-2); background: var(--panel);
+  border: 0; padding: .42rem .85rem; cursor: pointer;
+  transition: color .12s ease, background .12s ease;
+}
+.modenav-btn:hover:not(:disabled) { color: var(--accent-ink); background: var(--panel-2); }
+.modenav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.modenav-btn.is-current {
+  color: #EAFBFC; background: var(--accent-deep); cursor: default;
+}
 
 /* ---------- landing: pick a way in ---------- */
 .landing {
@@ -766,7 +781,7 @@ pre#log:empty::before {
   .masthead { border-bottom: 1px solid #999; padding-bottom: .4rem; }
   .mark { color: #111; }
   .mark span { color: #0B6A70; }
-  .role, .mode-toggle, .stepper, .rail-foot, .rail-actions, .rail-next,
+  .role, .modenav, .stepper, .rail-foot, .rail-actions, .rail-next,
   .colophon, .cleanup-footer, .modal, #mode-choice { display: none !important; }
   .rail-finish .actions-row { display: none !important; }
   .rail, .step, .prove-out, .entra, .cleanup-list {

@@ -30,13 +30,17 @@ export function showView(view) {
   $("bench-view").hidden = view !== "bench";
   $("training-view").hidden = view !== "training";
 
-  const toggle = $("btn-mode");
-  toggle.hidden = view === "choice";
-  if (view === "bench") toggle.textContent = "Switch to guided lab";
-  if (view === "training") toggle.textContent = "Switch to bench";
+  // All three sections are always reachable; the current one is marked and inert.
+  document.querySelectorAll("#modenav .modenav-btn").forEach((b) => {
+    const current = b.dataset.view === view;
+    b.classList.toggle("is-current", current);
+    b.disabled = current;
+    if (current) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
 
-  // The wordmark is the way home. On the start screen there is nowhere to go, so it stops
-  // behaving like a control.
+  // The wordmark is a second way home. On the start screen there is nowhere to go, so it
+  // stops behaving like a control.
   const home = $("btn-home");
   if (home) {
     home.disabled = view === "choice";

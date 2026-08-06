@@ -545,20 +545,26 @@ function enterMode(mode) {
   window.scrollTo(0, 0);
 }
 
-// The wordmark goes home to the start screen, from either mode.
-function goHome() {
-  clearMode();
-  refreshLandingPrimary();
-  showView("choice");
-  window.scrollTo(0, 0);
+// One entry point for every bit of navigation: the masthead nav, the wordmark, the landing
+// buttons and the "guided lab" link under the masthead all come through here.
+function goToView(view) {
+  if (view === "choice") {
+    clearMode();
+    refreshLandingPrimary();
+    showView("choice");
+    window.scrollTo(0, 0);
+    return;
+  }
+  enterMode(view);
 }
 
 function wireMode() {
   refreshLandingPrimary();
-  $("btn-home").addEventListener("click", goHome);
+  document.querySelectorAll("#modenav .modenav-btn").forEach((b) =>
+    b.addEventListener("click", () => goToView(b.dataset.view)));
+  $("btn-home").addEventListener("click", () => goToView("choice"));
   $("btn-mode-training").addEventListener("click", () => enterMode("training"));
   $("btn-mode-bench").addEventListener("click", () => enterMode("bench"));
-  $("btn-mode").addEventListener("click", () => enterMode(getMode() === "training" ? "bench" : "training"));
   $("btn-tolab").addEventListener("click", () => enterMode("training"));
   // One tooltip open at a time — they overlap the fields beneath them.
   document.addEventListener("click", (e) => {

@@ -16,7 +16,11 @@
     <header class="masthead">
       <button type="button" id="btn-home" class="mark" title="Back to the start screen">Passkey<span>Lab</span></button>
       <p class="role">WebAuthn testing bench · runs locally · no server, nothing leaves the browser</p>
-      <button id="btn-mode" class="btn btn-quiet mode-toggle" hidden></button>
+      <nav id="modenav" class="modenav" aria-label="Lab sections">
+        <button type="button" class="modenav-btn" data-view="choice">Home</button>
+        <button type="button" class="modenav-btn" data-view="training">Guided lab</button>
+        <button type="button" class="modenav-btn" data-view="bench">Bench</button>
+      </nav>
     </header>
 
     <!-- First visit: pick a way in. Persisted to localStorage 'passkey-lab-mode'. -->
