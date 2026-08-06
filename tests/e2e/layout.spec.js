@@ -166,3 +166,22 @@ test("body and log type step up at the wide breakpoint", async ({ page }) => {
   const logSize = await page.locator("#log").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
   expect(logSize).toBeCloseTo(12.8, 1);
 });
+
+test("panels sit flush in their rows — no hole under a short panel", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/index.html");
+
+  const gaps = await page.evaluate(() => {
+    const box = (s) => document.querySelector(s).getBoundingClientRect();
+    const gap = parseFloat(getComputedStyle(document.querySelector(".bench")).rowGap);
+    return {
+      gap: Math.round(gap),
+      underReg: Math.round(box(".b-prove").top - box(".b-reg").bottom),
+      underAuth: Math.round(box(".b-ledger").top - box(".b-auth").bottom),
+    };
+  });
+
+  // both columns close at the same height, so neither leaves a gap bigger than the grid gap
+  expect(gaps.underAuth).toBe(gaps.gap);
+  expect(gaps.underReg).toBe(gaps.gap);
+});

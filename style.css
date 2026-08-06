@@ -718,8 +718,15 @@ pre#log:empty::before {
     grid-template-areas:
       "reg   auth   trace"
       "prove ledger trace";
-    align-items: start;
+    /* Stretch, not start: grid rows share a height, so a shorter panel would otherwise leave
+       a hole between itself and the panel below. Each one fills its row and pushes its
+       trailing element to the bottom, so the space is used rather than just enclosed. */
+    align-items: stretch;
   }
+  .b-auth, .b-ledger, .b-prove, .b-reg { display: flex; flex-direction: column; }
+  .b-auth .autofill { margin-top: auto; }
+  .b-ledger .table-wrap { flex: 1 1 auto; }
+  .b-reg .hint, .b-prove .hint { margin-top: auto; }
   .col { display: contents; }
   .b-reg    { grid-area: reg; }
   .b-auth   { grid-area: auth; }
