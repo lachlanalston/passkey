@@ -42,6 +42,9 @@ body {
   margin: 0 auto;
   padding: clamp(1.1rem, 3vw, 2.4rem) clamp(1rem, 3vw, 2rem) 3rem;
 }
+/* The bench is a working surface, not an article — it gets the whole monitor. showView()
+   stamps the current view on <body>; the landing and the rail keep the reading-width cap. */
+body[data-view="bench"] .frame { max-width: none; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px;
