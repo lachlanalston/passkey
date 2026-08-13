@@ -30,6 +30,10 @@ export function showView(view) {
   $("bench-view").hidden = view !== "bench";
   $("training-view").hidden = view !== "training";
 
+  // The frame width is per-view: the bench spreads across the whole monitor, the other two
+  // keep the reading-width cap. style.css keys off this attribute.
+  document.body.dataset.view = view;
+
   // All three sections are always reachable; the current one is marked and inert.
   document.querySelectorAll("#modenav .modenav-btn").forEach((b) => {
     const current = b.dataset.view === view;
